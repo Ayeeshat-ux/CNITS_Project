@@ -1,0 +1,475 @@
+SOURCE: National Food Consumption and Micronutrient Survey (NFCMS) 2021
+Federal Ministry of Health Nigeria / IITA, 2021
+For use by Chop Beta nutrition AI — RAG retrieval document
+
+This document contains:
+- Top Nigerian foods contributing to each nutrient
+- Data broken down by: women 15-49 years, children 6-23 months, children 24-59 months
+- Data broken down by geopolitical zone: North West, North East, North Central, South West, South South, South East
+- MDD and IYCF indicators for children 6-23 months
+
+==================================================
+HOW TO USE THIS DOCUMENT
+==================================================
+
+When a user asks about nutrients in food, what to eat for a specific need, or what foods are missing from a meal — search this document for the relevant nutrient section. Use the food names and percentage contributions in your response. Always cite: (Source: NFCMS 2021)
+
+==================================================
+SECTION 1: IYCF AND MDD INDICATORS
+==================================================
+
+WHO/UNICEF Minimum Dietary Diversity (MDD) for children 6-23 months:
+A child meets MDD if they eat from at least 5 of these 8 food groups per day:
+1. Breast milk
+2. Grains, roots, tubers and plantains
+3. Pulses (beans, peas, lentils), nuts and seeds
+4. Dairy products (milk, infant formula, yogurt, cheese)
+5. Flesh foods (meat, fish, poultry, organ meats)
+6. Eggs
+7. Vitamin A-rich fruits and vegetables
+8. Other fruits and vegetables
+
+Minimum Meal Frequency (MMF):
+- Breastfed infants 6-8 months: at least 2 meals per day
+- Breastfed children 9-23 months: at least 3 meals per day
+- Non-breastfed children 6-23 months: at least 4 meals per day (including 2 milk feeds)
+
+Minimum Dietary Diversity for Women (MDD-W):
+A woman achieves MDD-W if she eats from at least 5 of 10 food groups:
+1. Grains, white roots, tubers and plantains
+2. Pulses (beans, peas, lentils)
+3. Nuts and seeds
+4. Milk and milk products
+5. Meat, poultry and fish
+6. Eggs
+7. Dark green leafy vegetables
+8. Other Vitamin A-rich fruits and vegetables
+9. Other vegetables
+10. Other fruits
+
+==================================================
+SECTION 2: ENERGY
+==================================================
+
+Keywords: energy, calories, tired, weak, fatigue, strength, no energy, kcal
+
+ENERGY — Top foods nationally (women 15-49 years):
+1. Palm olein — 11.6% of energy intake
+2. Rice — 10.6%
+3. Palm oil — 7.7%
+4. Maize products — 5.9%
+5. Garri — 4.7%
+6. Maize flour — 3.2%
+7. Bread — 3.1%
+8. Sorghum flour — 2.7%
+9. Condiments — 2.2%
+10. Spaghetti — 2.1%
+
+ENERGY — Top foods nationally (children 6-23 months):
+1. Palm olein — 10.6%
+2. Rice — 9.4%
+3. Maize products — 7.1%
+4. Palm oil — 6.6%
+5. Sugar — 3.4%
+6. Millet products — 3.4%
+7. Biscuit — 3.0%
+8. Sorghum products — 3.0%
+9. Maize flour — 3.0%
+10. Sorghum flour — 2.8%
+
+ENERGY — Top foods by zone (women 15-49 years):
+North West: Palm olein (16.1%), Maize products (10.1%), Rice (8.6%), Millet products (5.2%), Fura da nono (4.7%)
+North East: Palm olein (15.1%), Maize flour (10.1%), Rice (9.3%), Sorghum flour (6.2%), Maize products (5.6%)
+North Central: Rice (12.5%), Palm olein (11.7%), Maize products (10.2%), Palm oil (8.4%), Sorghum products (3.3%)
+South West: Rice (13.4%), Palm oil (11.5%), Garri (7.1%), Palm olein (6.8%), Bread (6.3%)
+South South: Garri (15.4%), Palm oil (12.2%), Rice (11.0%), Palm olein (5.9%), Bread (4.8%)
+South East: Rice (11.8%), Palm oil (10.8%), Garri (10.3%), Palm olein (7.0%), Cassava flour (5.0%)
+
+==================================================
+SECTION 3: PROTEIN
+==================================================
+
+Keywords: protein, baby growth, muscle, body building, thin baby, underweight, grow strong
+
+PROTEIN — Top foods nationally (women 15-49 years):
+1. Rice — 9.3%
+2. Maize products — 5.6%
+3. Cowpea (beans) — 4.7%
+4. Beef — 4.7%
+5. Cowpea products — 4.3%
+6. Bread — 4.3%
+7. Condiments — 3.7%
+8. Maize flour — 3.6%
+9. Spaghetti — 3.0%
+10. Mackerel fish — 2.9%
+
+PROTEIN — Top foods nationally (children 6-23 months):
+1. Rice — 8.5%
+2. Maize products — 6.7%
+3. Cowpea products — 4.6%
+4. Soybean products — 4.1%
+5. Cowpea — 4.1%
+6. Powdered milk — 3.9%
+7. Fura da nono — 3.8%
+8. Condiments — 3.6%
+9. Sorghum products — 3.5%
+10. Maize flour — 3.5%
+
+PROTEIN — Top foods by zone (women 15-49 years):
+North West: Maize products (10.2%), Rice (7.9%), Fura da nono (7.1%), Groundnut products (5.6%), Millet products (5.6%)
+North East: Maize flour (11.7%), Rice (8.4%), Sorghum flour (6.7%), Maize products (5.7%), Condiments (5.3%)
+North Central: Rice (11.0%), Maize products (9.8%), Cowpea products (5.7%), Beef (5.4%), Cowpea (4.7%)
+South West: Rice (10.0%), Hake fish (8.3%), Bread (7.6%), Cowpea (7.0%), Cowpea products (6.8%)
+South South: Rice (9.8%), Beef (9.0%), Bread (6.6%), Cowpea (6.5%), Mackerel fish (6.3%)
+South East: Rice (10.6%), Beef (7.1%), Bread (6.1%), Cowpea (6.0%), Shellfish (5.8%)
+
+==================================================
+SECTION 4: CALCIUM
+==================================================
+
+Keywords: calcium, bones, teeth, strong bones, baby teeth, bone development, milk, crayfish, calcium deficiency
+
+CALCIUM — Top foods nationally (women 15-49 years):
+1. Bread — 7.6%
+2. Condiments — 7.1%
+3. Shellfish (crayfish) — 5.7%
+4. Fura da nono — 5.3%
+5. Baobab powder — 3.9%
+6. Soybean products — 3.8%
+7. Garri — 3.5%
+8. Rice — 3.1%
+9. Powdered milk — 2.9%
+10. Catfish — 2.5%
+
+CALCIUM — Top foods nationally (children 6-23 months):
+1. Powdered milk — 11.1%
+2. Fura da nono — 7.5%
+3. Soybean products — 6.8%
+4. Condiments — 5.8%
+5. Baobab powder — 5.2%
+6. Bread — 4.9%
+7. Cocoa — 4.9%
+8. Infant cereal — 4.8%
+9. Shellfish — 3.9%
+10. Infant formula — 3.0%
+
+CALCIUM — Top foods by zone (women 15-49 years):
+North West: Fura da nono (18.1%), Condiments (11.5%), Baobab powder (11.4%), Soybean products (10.0%), Bread (4.7%)
+North East: Condiments (13.0%), Baobab powder (12.8%), Bread (5.9%), Soybean products (4.9%), Fura da nono (3.9%)
+North Central: Bread (8.8%), Condiments (7.6%), Shellfish (6.2%), Rice (5.1%), Catfish (4.5%)
+South West: Bread (16.4%), Hake fish (10.5%), Garri (5.7%), Jute mallow leaves (5.3%), Cocoa (4.7%)
+South South: Shellfish (18.8%), Bread (12.3%), Garri (9.7%), Catfish (5.5%), Fluted pumpkin leaves/Ugu (5.1%)
+South East: Shellfish (19.4%), Bread (11.4%), Fluted pumpkin leaves/Ugu (7.6%), Garri (7.4%), Condiments (4.2%)
+
+==================================================
+SECTION 5: IRON
+==================================================
+
+Keywords: iron, anaemia, anemia, tiredness, weakness, blood, low blood, pale, iron deficiency, prevent anaemia
+
+IRON — Top foods nationally (women 15-49 years):
+1. Condiments — 15.4%
+2. Millet products — 7.3%
+3. Rice — 5.9%
+4. Maize products — 5.7%
+5. Pepper — 4.5%
+6. Garri — 4.3%
+7. Bread — 3.9%
+8. Cowpea (beans) — 3.4%
+9. Tomato — 3.3%
+10. Sorghum products — 3.0%
+
+IRON — Top foods nationally (children 6-23 months):
+1. Condiments — 13.6%
+2. Millet products — 12.6%
+3. Breakfast cereal — 6.7%
+4. Maize products — 5.6%
+5. Rice — 4.7%
+6. Sorghum products — 3.9%
+7. Pepper — 3.4%
+8. Cocoa — 3.1%
+9. Soybean products — 2.9%
+10. Infant cereal — 2.8%
+
+IRON — Top foods by zone (women 15-49 years):
+North West: Condiments (21.7%), Millet products (16.2%), Maize products (9.8%), Sorghum products (4.8%), Pepper (4.4%)
+North East: Condiments (24.2%), Maize flour (8.2%), Maize products (5.3%), Pepper (5.3%), Millet products (5.1%)
+North Central: Condiments (13.5%), Maize products (10.0%), Rice (6.3%), Sorghum products (5.1%), Tomato (4.8%)
+South West: Rice (9.7%), Bread (8.7%), Garri (7.1%), Cowpea (6.2%), Pepper (5.5%)
+South South: Garri (17.1%), Shellfish (7.5%), Rice (7.0%), Bread (7.0%), Cowpea (5.4%)
+South East: Garri (11.7%), Condiments (8.1%), Rice (7.6%), Shellfish (7.3%), Bread (6.2%)
+
+==================================================
+SECTION 6: ZINC
+==================================================
+
+Keywords: zinc, immunity, immune system, infection, wound healing, baby growth, zinc deficiency
+
+ZINC — Top foods nationally (women 15-49 years):
+1. Garri — 12.1%
+2. Rice — 10.5%
+3. Maize products — 7.9%
+4. Beef — 4.5%
+5. Millet products — 4.1%
+6. Cowpea — 3.9%
+7. Rice products — 3.7%
+8. Maize flour — 3.1%
+9. Cowpea products — 2.6%
+10. Sorghum flour — 2.3%
+
+ZINC — Top foods nationally (children 6-23 months):
+1. Maize products — 9.9%
+2. Rice — 9.7%
+3. Garri — 7.0%
+4. Breakfast cereal — 6.3%
+5. Millet products — 5.4%
+6. Sorghum products — 3.6%
+7. Cowpea — 3.4%
+8. Cowpea products — 2.9%
+9. Maize flour — 2.8%
+10. Powdered milk — 2.7%
+
+ZINC — Top foods by zone (women 15-49 years):
+North West: Maize products (15.0%), Millet products (12.5%), Rice (9.4%), Rice products (5.8%), Sorghum flour (4.8%)
+North East: Maize flour (14.3%), Rice (11.0%), Maize products (8.2%), Rice products (6.7%), Sorghum flour (5.8%)
+North Central: Maize products (13.4%), Rice (12.6%), Rice products (9.1%), Beef (5.5%), Cowpea (4.0%)
+South West: Rice (varies), Cowpea, Beef, Hake fish, Bread
+South South: Rice, Beef, Shellfish, Garri, Cowpea
+South East: Rice, Beef, Garri, Cowpea, Shellfish
+
+==================================================
+SECTION 7: VITAMIN A
+==================================================
+
+Keywords: vitamin A, eyesight, night blindness, eye development, vision, immunity, orange foods, palm oil
+
+VITAMIN A — Top foods nationally (women 15-49 years):
+1. Palm oil — 59.6%
+2. Banga (palm fruit soup) — 9.6%
+3. Palm olein — 6.4%
+4. Mango — 3.3%
+5. Sugar (fortified) — 3.2%
+6. Pepper — 2.5%
+7. Tomato — 1.5%
+8. Amaranthus leaves — 1.2%
+9. Powdered milk — 1.0%
+10. Garri — 1.0%
+
+VITAMIN A — Top foods nationally (children 6-23 months):
+1. Palm oil — 55.9%
+2. Palm olein — 6.4%
+3. Sugar (fortified) — 5.8%
+4. Powdered milk — 5.6%
+5. Banga — 5.2%
+6. Pepper — 2.1%
+7. Mango — 2.1%
+8. Infant cereal — 1.8%
+9. Tomato — 1.5%
+10. Infant formula — 1.4%
+
+VITAMIN A — Top foods by zone (women 15-49 years):
+North West: Palm oil (51.8%), Palm olein (13.6%), Sugar (6.5%), Mango (6.2%), Pepper (5.0%)
+North East: Palm oil (60.3%), Palm olein (10.5%), Sugar (5.9%), Mango (5.1%), Pepper (4.3%)
+North Central: Palm oil (64.7%), Palm olein (7.0%), Mango (4.2%), Sugar (4.1%), Tomato (2.5%)
+South West: Palm oil (72.5%), Palm olein (3.5%), Jute mallow leaves (2.6%), Pepper (2.0%), Sugar (1.9%)
+South South: Palm oil (57.2%), Banga (24.3%), Garri (2.7%), Palm olein (2.0%), Waterleaf (2.0%)
+South East: Palm oil (51.8%), Banga (27.3%), Palm olein (2.7%), Mango (2.5%), Garri (1.9%)
+
+==================================================
+SECTION 8: VITAMIN C
+==================================================
+
+Keywords: vitamin C, immunity, iron absorption, infection, scurvy, pepper, tomato, orange, fruit
+
+VITAMIN C — Top foods nationally (women 15-49 years):
+1. Pepper — 31.5%
+2. Tomato — 20.3%
+3. Mango — 8.8%
+4. Onion — 4.6%
+5. Sweet white potato — 2.3%
+6. Cocoa — 2.3%
+7. White yam tuber — 2.2%
+8. Fruit juice (unspecified) — 2.1%
+9. Okro — 1.9%
+10. Amaranthus leaves — 1.8%
+
+VITAMIN C — Top foods nationally (children 6-23 months):
+1. Pepper — 2.0% (lower because children eat less pepper)
+2. Tomato — 1.3%
+3. Cocoa — 0.4%
+4. Mango — 0.4%
+5. Onion — 0.3%
+6. Infant formula — 0.3%
+7. Fruit juice — 0.2%
+8. Sweet white potato — 0.2%
+9. Jute mallow leaves — 0.2%
+10. Infant cereal — 0.2%
+
+VITAMIN C — Top foods by zone (women 15-49 years):
+North West: Pepper (34.6%), Tomato (20.4%), Mango (12.3%), Onion (5.8%), Sweet potato (4.9%)
+North East: Pepper (40.1%), Tomato (19.2%), Mango (11.0%), Onion (5.2%), Sweet potato (2.9%)
+North Central: Pepper (30.3%), Tomato (23.8%), Mango (8.6%), Onion (4.2%), Orange (4.1%)
+South West: Pepper (37.3%), Tomato (25.1%), Jute mallow leaves (5.9%), Cocoa (4.1%), Onion (3.5%)
+South South: Pepper (19.8%), Tomato (14.0%), Mango (7.0%), White yam (5.6%), Pawpaw (5.1%)
+South East: Tomato (15.0%), Pepper (13.9%), Mango (9.6%), Guava (5.4%), White yam (5.2%)
+
+==================================================
+SECTION 9: FOLATE (VITAMIN B9)
+==================================================
+
+Keywords: folate, folic acid, vitamin B9, pregnancy, birth defect, neural tube, brain development, cowpea folate, beans folate
+
+FOLATE — Top foods nationally (women 15-49 years):
+1. Cowpea products — 10.8%
+2. Cowpea (beans) — 10.1%
+3. Garri — 8.9%
+4. Rice — 5.1%
+5. Condiments — 3.8%
+6. Maize products — 3.5%
+7. Okro — 3.2%
+8. Mango — 3.1%
+9. Millet products — 3.0%
+10. Maize flour — 2.9%
+
+FOLATE — Top foods nationally (children 6-23 months):
+1. Cowpea products — 11.9%
+2. Cowpea — 9.2%
+3. Garri — 5.0%
+4. Millet products — 5.0%
+5. Rice — 4.7%
+6. Cocoa — 4.3%
+7. Condiments — 3.6%
+8. Maize products — 3.6%
+9. Okro — 3.0%
+10. Baobab powder — 2.8%
+
+FOLATE — Top foods by zone (women 15-49 years):
+North West: Cowpea products (9.7%), Millet products (8.8%), Maize products (7.1%), Condiments (6.1%), Cowpea (6.0%)
+North East: Maize flour (13.2%), Cowpea (8.6%), Cowpea products (8.5%), Rice (5.5%), Baobab powder (5.2%)
+North Central: Cowpea products (14.2%), Cowpea (9.8%), Maize products (6.2%), Rice (5.9%), Cassava starch (5.3%)
+South West: Cowpea products (15.6%), Cowpea (14.7%), Garri (11.0%), Cassava starch flour (8.8%), Rice (4.9%)
+South South: Garri (27.7%), Cowpea (12.6%), Cowpea products (6.8%), Rice (5.1%), Bread (3.9%)
+South East: Garri (19.4%), Cowpea (11.8%), Cowpea products (9.4%), Rice (5.3%), Bread (3.6%)
+
+==================================================
+SECTION 10: VITAMIN B12
+==================================================
+
+Keywords: vitamin B12, brain development, nerve development, baby brain, fish B12, mackerel, sardine, catfish, bonga fish
+
+VITAMIN B12 — Top foods nationally (women 15-49 years):
+1. Mackerel fish — 27.8%
+2. Sardine fish — 14.5%
+3. Catfish — 7.3%
+4. Hake fish — 5.7%
+5. Beef — 5.0%
+6. Stockfish — 4.8%
+7. Bonga fish — 3.4%
+8. Garri — 3.0%
+9. Mangala fish — 2.9%
+10. Shellfish — 2.8%
+
+VITAMIN B12 — Top foods nationally (children 6-23 months):
+1. Mackerel fish — 24.9%
+2. Breakfast cereal — 14.0%
+3. Powdered milk — 7.9%
+4. Sardine fish — 7.7%
+5. Cocoa — 5.0%
+6. Fura da nono — 3.6%
+7. Infant cereal — 3.4%
+8. Stockfish — 2.8%
+9. Chicken eggs — 2.7%
+10. Beef — 2.3%
+
+VITAMIN B12 — Top foods by zone (women 15-49 years):
+North West: Sardine (23.3%), Fura da nono (21.8%), Catfish (10.7%), Beef (6.7%), Stockfish (5.7%)
+North East: Sardine (20.3%), Mackerel (18.6%), Catfish (11.0%), Beef (8.6%), Mangala fish (5.7%)
+North Central: Mackerel (25.0%), Sardine (11.6%), Catfish (10.4%), Beef (7.2%), Tilapia (7.2%)
+South West: Mackerel (29.6%), Sardine (24.0%), Hake fish (12.8%), Catfish (3.7%), Beef (3.4%)
+South South: Mackerel (33.3%), Catfish (9.4%), Shellfish (8.5%), Bonga fish (5.8%), Sardine (5.3%)
+South East: Mackerel (33.3%), Stockfish (12.4%), Mangala fish (10.8%), Shellfish (5.6%), Beef (4.5%)
+
+==================================================
+SECTION 11: RIBOFLAVIN (VITAMIN B2)
+==================================================
+
+Keywords: riboflavin, vitamin B2, energy metabolism, skin, eye health, fatigue
+
+RIBOFLAVIN — Top foods nationally (women 15-49 years):
+Rice, Bread, Peppers, Catfish, Cocoa, Fura da nono are main contributors.
+
+RIBOFLAVIN — Top foods nationally (children 6-23 months):
+Rice, Bread, Peppers, Catfish, Cocoa, Fura da nono are main contributors.
+
+==================================================
+SECTION 12: THIAMINE (VITAMIN B1)
+==================================================
+
+Keywords: thiamine, vitamin B1, energy, nerves, fatigue, beri beri
+
+THIAMINE — Top foods nationally (women and children):
+1. Bread
+2. Maize products
+3. Millet products
+4. Rice
+5. Pepper
+6. Cocoa
+7. Maize flour
+8. Noodles
+9. Sorghum products
+10. Amaranthus leaves
+
+==================================================
+SECTION 13: FAT
+==================================================
+
+Keywords: fat, healthy fat, omega, energy density, brain development fat
+
+FAT — Top foods nationally (women 15-49 years):
+1. Palm olein — 35.1%
+2. Palm oil — 23.2%
+3. Other vegetable oils — 4.0%
+4. Beef — 3.9%
+5. Groundnut — 3.0%
+6. Banga — 2.6%
+7. Melon seeds (egusi) — 2.0%
+8. Soybean products — 1.5%
+9. Rice — 1.4%
+10. Mackerel fish — 1.4%
+
+FAT — Top foods nationally (children 6-23 months):
+1. Palm olein — 32.4%
+2. Palm oil — 19.9%
+3. Other vegetable oils — 4.6%
+4. Biscuit — 3.6%
+5. Powdered milk — 3.1%
+6. Soybean products — 3.0%
+7. Groundnut — 2.5%
+8. Millet products — 1.9%
+9. Beef — 1.9%
+10. Fura da nono — 1.6%
+
+==================================================
+SECTION 14: LACTATING WOMEN — INTAKE SUMMARY
+==================================================
+
+Keywords: breastfeeding, nursing mother, lactating women, milk supply, breast milk, nursing diet
+
+From NFCMS 2021 national data:
+- Mean energy intake for lactating women: 2,061 kcal/day (below recommended 2,500-2,800 kcal)
+- Mean protein intake for lactating women: 53 g/day (below recommended 71 g)
+- 66% of lactating women have inadequate protein intake (63% rural, 51% urban)
+- Mean animal-source protein: 14 g/day for non-pregnant women
+- Mean plant-source protein: 40 g/day for lactating women
+
+Key insight: Most Nigerian nursing mothers are not eating enough energy or protein. Priority is to increase food quantity and diversity, especially adding animal-source foods.
+
+Top food sources for lactating mothers (nationally):
+- Energy: Palm olein, Rice, Palm oil, Maize products, Garri
+- Protein: Rice, Maize products, Cowpea, Beef, Bread
+- Iron: Condiments, Millet products, Rice, Pepper, Garri
+- Calcium: Bread, Shellfish/crayfish, Fura da nono, Baobab powder, Soybean products
+- Vitamin A: Palm oil, Banga, Palm olein, Mango
+- Folate: Cowpea products, Cowpea/beans, Garri, Rice
+- Vitamin B12: Mackerel, Sardine, Catfish, Beef
+- Vitamin C: Pepper, Tomato, Mango, Onion

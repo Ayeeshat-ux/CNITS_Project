@@ -1,6 +1,15 @@
+streamlit
 pandas
 numpy
 scikit-learn
 matplotlib
 seaborn
-jupyter
+langchain
+langchain-community
+chromadb
+openai
+pdfplumber
+SpeechRecognition
+gTTS
+reportlab
+python-ics
