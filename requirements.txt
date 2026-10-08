@@ -12,4 +12,5 @@ pdfplumber
 SpeechRecognition
 gTTS
 reportlab
-python-ics
+ics
+pytest
