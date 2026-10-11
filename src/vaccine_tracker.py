@@ -35,7 +35,6 @@ def calculate_age(date_of_birth, as_of=None) -> dict:
         raise ValueError("as_of date cannot be earlier than date of birth.")
 
     total_days = (reference_date - dob).days
-
     total_weeks = total_days // 7
 
     years = reference_date.year - dob.year
@@ -156,10 +155,7 @@ def _build_hpv_schedule(date_of_birth, vaccination_history, as_of):
         "route": HPV_SCHEDULE["route"],
         "site": HPV_SCHEDULE["site"],
         "due_date": None,
-        "due_date_label": (
-            f"{window_start.strftime('%d %b %Y')} - "
-            f"{window_end.strftime('%d %b %Y')}"
-        ),
+        "due_date_label": f"{window_start.strftime('%d %b %Y')} - {window_end.strftime('%d %b %Y')}",
         "status": hpv1_status,
         "is_windowed": True,
         "window_start": window_start,

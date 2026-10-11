@@ -77,7 +77,7 @@ with st.sidebar:
     
     # Recents & Chat History
     st.markdown("### 📜 Recents")
-    if st.button("➕ New Chat", use_container_width=True):
+    if st.button("➕ New Chat", width='stretch'):
         st.session_state.messages = []
         st.rerun()
 
@@ -119,19 +119,19 @@ if app_mode == "💬 AI Health Assistant":
         c1, c2, c3 = st.columns(3)
         if c1.button(
             "🍼 6-Month Infant Feeding",
-            use_container_width=True,
+            width='stretch',
             disabled=not has_ai_credentials,
         ):
             st.session_state.messages.append({"role": "user", "content": "What local foods can I give my 6-month-old baby in Nigeria?"})
         if c2.button(
             "💉 10-Week Vaccine List",
-            use_container_width=True,
+            width='stretch',
             disabled=not has_ai_credentials,
         ):
             st.session_state.messages.append({"role": "user", "content": "Which vaccines are due at 10 weeks according to NPHCDA?"})
         if c3.button(
             "🥗 Preventing Malnutrition",
-            use_container_width=True,
+            width='stretch',
             disabled=not has_ai_credentials,
         ):
             st.session_state.messages.append({"role": "user", "content": "How can I ensure my child gets enough iron and micronutrients?"})
@@ -218,7 +218,7 @@ elif app_mode == "💉 Smart Vaccine Tracker":
                 "Route": r["route"],
                 "Site": r["site"]
             })
-        st.dataframe(display_data, use_container_width=True, hide_index=True)
+        st.dataframe(display_data, width='stretch', hide_index=True)
 
 # ==========================================
 # MODE 3: HEALTH CENTER FINDER

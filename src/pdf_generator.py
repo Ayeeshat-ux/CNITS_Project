@@ -1,4 +1,6 @@
 from io import BytesIO
+from datetime import date
+import streamlit as st
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -449,3 +451,53 @@ def generate_health_passport(
 
     # Return the PDF
     return buffer.getvalue()
+
+
+# ============================================================
+# STREAMLIT UI RENDER FUNCTION
+# ============================================================
+
+def render_pdf_generator():
+    """
+    Render the PDF Health Passport generator UI in Streamlit.
+    """
+    st.subheader("📄 Child Digital Health Passport Generator")
+    st.write("Generate and download an official summary report of the child's health, vaccine history, and growth logs.")
+
+    with st.form("pdf_form"):
+        st.markdown("### Child Details")
+        c_name = st.text_input("Child's Full Name", value="Amina Bello")
+        c_dob = st.date_input("Date of Birth", value=date(2026, 1, 1))
+        c_sex = st.selectbox("Sex", ["Female", "Male"])
+        c_id = st.text_input("Health ID / Registration Number", value="CNITS-2026-001")
+
+        submitted = st.form_submit_button("Generate PDF Passport")
+
+    if submitted:
+        child_info = {
+            "name": c_name,
+            "date_of_birth": str(c_dob),
+            "sex": c_sex,
+            "health_id": c_id
+        }
+
+        sample_vaccines = [
+            {"vaccine": "BCG", "date_given": str(c_dob), "status": "Completed"},
+            {"vaccine": "OPV 0", "date_given": str(c_dob), "status": "Completed"},
+            {"vaccine": "Penta 1", "date_given": "2026-03-01", "status": "Due Now"}
+        ]
+
+        sample_growth = [
+            {"date": str(c_dob), "weight_kg": 3.2, "height_cm": 50.0},
+            {"date": "2026-03-01", "weight_kg": 5.4, "height_cm": 58.2}
+        ]
+
+        pdf_bytes = generate_health_passport(child_info, sample_vaccines, sample_growth)
+
+        st.success("Health Passport PDF generated successfully!")
+        st.download_button(
+            label="📥 Download Health Passport (PDF)",
+            data=pdf_bytes,
+            file_name=f"{c_name.replace(' ', '_')}_Health_Passport.pdf",
+            mime="application/pdf"
+        )
