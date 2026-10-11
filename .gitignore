@@ -1,16 +1,15 @@
+# Python virtual environments
+.venv/
+venv/
 myvenv/
-venv/
-__pycache__/
-.ipynb_checkpoints/
-.env
 
-# Python environment.venv/
-venv/
-_pycache__/
+# Python cache files
+__pycache__/
 *.pyc
+*.pyo
 
 # Environment variables
-.env                        
+.env  
 
 # Vector database
 chroma_db/
@@ -18,3 +17,11 @@ chroma_db/
 # Jupyter temporary files
 .ipynb_checkpoints/
 
+# IDE files
+.vscode/    
+
+# Large model and files
+*.pt
+*.pth
+*.bin
+*.safetensors
