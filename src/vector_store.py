@@ -1,7 +1,10 @@
+# src/vector_store.py
+
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.data_loader import load_documents, split_documents
+
 
 def create_vector_store():
     documents = load_documents("data/NFCMS_DATA.txt")
@@ -26,6 +29,6 @@ def create_vector_store():
 
     return vector_store
 
+
 if __name__ == "__main__":
     create_vector_store()
-    
