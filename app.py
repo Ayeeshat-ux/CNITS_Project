@@ -1,7 +1,9 @@
 # app.py
 
-import streamlit as st
 from datetime import date
+import os
+
+import streamlit as st
 from src.rag_engine import get_agent_executor
 from src.vaccine_tracker import (
     build_vaccine_schedule,
@@ -95,7 +97,16 @@ if app_mode == "💬 AI Health Assistant":
     st.markdown('<p class="chat-header">What can I help with your baby\'s health today?</p>', unsafe_allow_html=True)
     st.markdown('<p class="chat-sub">Type in any Nigerian language (Yoruba, Hausa, Igbo, Pidgin, etc.) or English</p>', unsafe_allow_html=True)
 
-    if "agent" not in st.session_state:
+    has_ai_credentials = all(
+        os.getenv(key) for key in ("OPENAI_API_KEY", "EMBEDDING_API_KEY")
+    )
+
+    if not has_ai_credentials:
+        st.warning(
+            "The AI assistant needs OPENAI_API_KEY and EMBEDDING_API_KEY. "
+            "Add them to a .env file in the project root; do not commit that file."
+        )
+    elif "agent" not in st.session_state:
         st.session_state.agent = get_agent_executor()
 
     if "messages" not in st.session_state:
@@ -106,11 +117,23 @@ if app_mode == "💬 AI Health Assistant":
     # Starter Suggestion Chips (ChatGPT Style)
     if not st.session_state.messages:
         c1, c2, c3 = st.columns(3)
-        if c1.button("🍼 6-Month Infant Feeding", use_container_width=True):
+        if c1.button(
+            "🍼 6-Month Infant Feeding",
+            use_container_width=True,
+            disabled=not has_ai_credentials,
+        ):
             st.session_state.messages.append({"role": "user", "content": "What local foods can I give my 6-month-old baby in Nigeria?"})
-        if c2.button("💉 10-Week Vaccine List", use_container_width=True):
+        if c2.button(
+            "💉 10-Week Vaccine List",
+            use_container_width=True,
+            disabled=not has_ai_credentials,
+        ):
             st.session_state.messages.append({"role": "user", "content": "Which vaccines are due at 10 weeks according to NPHCDA?"})
-        if c3.button("🥗 Preventing Malnutrition", use_container_width=True):
+        if c3.button(
+            "🥗 Preventing Malnutrition",
+            use_container_width=True,
+            disabled=not has_ai_credentials,
+        ):
             st.session_state.messages.append({"role": "user", "content": "How can I ensure my child gets enough iron and micronutrients?"})
 
     # Render Chat History
@@ -126,7 +149,9 @@ if app_mode == "💬 AI Health Assistant":
             st.success(f"Attached: `{uploaded_file.name}` (Ready for session context)")
 
     # User Chat Input (Auto-detects language)
-    if user_input := st.chat_input("Message PikinCare AI..."):
+    if user_input := st.chat_input(
+        "Message PikinCare AI...", disabled=not has_ai_credentials
+    ):
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user", avatar="👶"):
             st.markdown(user_input)
