@@ -1,9 +1,7 @@
-from pathlib import Path
-
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from data.data_loader import load_documents, split_documents
+from src.data_loader import load_documents, split_documents
 
 def create_vector_store():
     documents = load_documents("data/NFCMS_DATA.txt")
