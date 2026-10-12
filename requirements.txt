@@ -1,24 +1,22 @@
 streamlit
-pandas
-numpy
-scikit-learn
-matplotlib
-seaborn
-langchain
-langchain-community
-langchain-text-splitters
-langchain-chroma
-langchain-huggingface
-langchain-openai
-huggingface-hub>=1.31.0,<3.0
-ddgs
-chromadb
 openai
-pdfplumber
+langchain
+langchain-openai
+langchain-community
+langchain-chroma
+chromadb
+python-dotenv
+duckduckgo-search
 SpeechRecognition
 gTTS
+<<<<<<< HEAD
 reportlab
 ics
 pytest
 pypdf
 python-docx
+=======
+pandas
+pypdf
+reportlab
+>>>>>>> e1dc3b28ff35a6e486b98328238ab52f3b5a53d1
