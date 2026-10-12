@@ -1,351 +1,704 @@
-# app.py
-
-from datetime import date
+from datetime import date, datetime
+import json
+import base64
 import os
 import tempfile
-import streamlit as st
-from src.speech_engine import speech_to_text, text_to_speech
-from src.rag_engine import get_agent_executor
-from src.vaccine_tracker import (
-    build_vaccine_schedule,
-    calculate_age,
-    group_vaccines_by_status,
-)
+from pathlib import Path
 
-# Safe imports for modular components
+import streamlit as st
+
+# CNITS modules from the existing project
+try:
+    from src.rag_engine import get_agent_executor
+except Exception:
+    get_agent_executor = None
+
+try:
+    from src.vaccine_tracker import (
+        build_vaccine_schedule,
+        calculate_age,
+        group_vaccines_by_status,
+    )
+except Exception:
+    build_vaccine_schedule = calculate_age = group_vaccines_by_status = None
+
 try:
     from src.health_center import display_health_center_finder
-except ImportError:
+except Exception:
     display_health_center_finder = None
 
 try:
     from src.pdf_generator import render_pdf_generator
-except ImportError:
+except Exception:
     render_pdf_generator = None
 
-st.set_page_config(
-    page_title="CNITS - Child Nutrition & Immunization Tracking System",
-    page_icon="👶",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+try:
+    from src.speech_engine import speech_to_text, text_to_speech
+except Exception:
+    speech_to_text = text_to_speech = None
 
-# Custom CSS for vibrant cards, badges, and layout styling
-st.markdown("""
-<style>
-.stApp {
-    background: #F5FAF9;
-    color: #153D3D;
-}
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #064E4A, #003F40);
-}
-[data-testid="stSidebar"] * {
-    color: #FFFFFF;
-}
-[data-testid="stSidebar"] .stRadio label {
-    padding: 8px 10px;
-}
-h1, h2, h3 {
-    color: #064E4A;
-}
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-}
-.stButton > button {
-    background: #087F79;
-    color: white;
-    border: 1px solid #087F79;
-    border-radius: 10px;
-    min-height: 42px;
-    font-weight: 600;
-}
-.stButton > button:hover {
-    background: #05645F;
-    color: white;
-}
-.stTextArea textarea, .stTextInput input {
-    background: white;
-    border-radius: 8px;
-}
-[data-testid="stMetric"] {
-    background: white;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #D9EAE7;
-    box-shadow: 0 2px 8px #064e4a0a;
-}
-[data-testid="stMetricValue"] {
-    font-size: 1.35rem !important;
-}
-[data-testid="stMetricLabel"] {
-    color: #315A59;
-}
-.hero {
-    background: linear-gradient(110deg, #E8F8F3, #D4F0E5);
-    padding: 28px;
-    border-radius: 16px;
-    border: 1px solid #D7EEE6;
-    margin-bottom: 20px;
-}
-.panel {
-    background: white;
-    padding: 22px;
-    border: 1px solid #DCEAE8;
-    border-radius: 14px;
-    margin-bottom: 16px;
-}
-.small-note {
-    color: #496C69;
-    font-size: 14px;
-}
-</style>
-""", unsafe_allow_html=True)
 
-# SIDEBAR
-with st.sidebar:
-    st.markdown("# 👶 CNITS")
-    st.caption("Child Nutrition & Immunization Tracking System")
-    st.divider()
+ROOT = Path(__file__).resolve().parent
+ASSETS = ROOT / "assets"
+DATA_DIR = ROOT / "data"
+MEMORY_FILE = DATA_DIR / "cnits_recent_activity.json"
+SUPPORTED_ATTACHMENTS = {"pdf", "txt", "csv", "md", "docx"}
 
-    page = st.radio(
-        "Navigation",
-        [
-            "Home",
-            "Nutrition AI",
-            "Immunization Tracker",
-            "Health Center Finder",
-            "Growth & Health Passport",
-            "Settings",
-            "Help"
-        ],
-        label_visibility="collapsed",
-        key="main_navigation"
+
+def image_data_uri(filename):
+    """Return a local image as a data URI, or an empty string if unavailable."""
+    path = ASSETS / filename
+    if not path.exists():
+        return ""
+    suffix = path.suffix.lower()
+    mime = "image/png" if suffix == ".png" else "image/jpeg"
+    encoded = base64.b64encode(path.read_bytes()).decode("utf-8")
+    return f"data:{mime};base64,{encoded}"
+
+
+def init_state():
+    defaults = {
+        "cnits_page": "Home",
+        "nutrition_messages": [],
+        "home_meal_answer": "",
+        "vaccine_summary": None,
+        "growth_records": [],
+        "agent_instance": None,
+        "agent_error": "",
+        "recent_activity": None,
+        "active_chat_id": None,
+        "attached_context": "",
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
+def load_recent_activity():
+    """Load locally stored recent activity; creates an empty list when absent."""
+    if st.session_state.recent_activity is not None:
+        return st.session_state.recent_activity
+    try:
+        if MEMORY_FILE.exists():
+            data = json.loads(MEMORY_FILE.read_text(encoding="utf-8"))
+            st.session_state.recent_activity = data if isinstance(data, list) else []
+        else:
+            st.session_state.recent_activity = []
+    except (OSError, json.JSONDecodeError):
+        st.session_state.recent_activity = []
+    return st.session_state.recent_activity
+
+
+def save_recent_activity(title, messages, kind="Nutrition chat"):
+    """Keep a small local history of recent chats or file attachments."""
+    history = load_recent_activity()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    item = {
+        "id": datetime.now().strftime("%Y%m%d%H%M%S%f"),
+        "title": (title or kind)[:90],
+        "kind": kind,
+        "updated_at": now,
+        "messages": messages[-30:],
+    }
+    history.insert(0, item)
+    st.session_state.recent_activity = history[:15]
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        MEMORY_FILE.write_text(json.dumps(st.session_state.recent_activity, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as exc:
+        st.session_state.memory_save_error = str(exc)
+    st.session_state.active_chat_id = item["id"]
+
+
+def extract_attachment_text(uploaded_file):
+    """Extract readable text from supported uploads without storing the original file."""
+    name = uploaded_file.name
+    ext = Path(name).suffix.lower().lstrip(".")
+    raw = uploaded_file.getvalue()
+    if ext in {"txt", "md", "csv"}:
+        return raw.decode("utf-8", errors="replace")[:30000]
+    if ext == "pdf":
+        try:
+            from pypdf import PdfReader
+            import io
+            reader = PdfReader(io.BytesIO(raw))
+            return "\n".join(page.extract_text() or "" for page in reader.pages)[:30000]
+        except ImportError:
+            return "PDF text extraction needs pypdf. Install it with: pip install pypdf"
+        except Exception as exc:
+            return f"Could not read this PDF: {exc}"
+    if ext == "docx":
+        try:
+            from docx import Document
+            import io
+            document = Document(io.BytesIO(raw))
+            return "\n".join(paragraph.text for paragraph in document.paragraphs)[:30000]
+        except ImportError:
+            return "Word document extraction needs python-docx. Install it with: pip install python-docx"
+        except Exception as exc:
+            return f"Could not read this Word document: {exc}"
+    return "This file type is not supported. Upload PDF, TXT, CSV, Markdown or DOCX."
+
+
+def render_recent_activity():
+    history = load_recent_activity()
+    with st.sidebar.expander(f"🕘 Recent activity ({len(history)})", expanded=False):
+        if not history:
+            st.caption("Your recent chats and attachments will appear here.")
+        for item in history[:10]:
+            st.caption(f"{item.get('updated_at', '')} · {item.get('kind', 'Activity')}")
+            if st.button(f"📄 {item.get('title', 'Untitled')[:42]}", key=f"recent_{item.get('id', '')}", use_container_width=True):
+                st.session_state.nutrition_messages = item.get("messages", [])
+                st.session_state.cnits_page = "Nutrition AI"
+                st.rerun()
+        if history and st.button("Clear recent activity", key="clear_recent_activity"):
+            st.session_state.recent_activity = []
+            try:
+                if MEMORY_FILE.exists():
+                    MEMORY_FILE.unlink()
+            except OSError:
+                pass
+            st.rerun()
+
+def get_agent():
+    if st.session_state.agent_instance is not None:
+        return st.session_state.agent_instance
+    if get_agent_executor is None:
+        st.session_state.agent_error = "src.rag_engine could not be imported."
+        return None
+    try:
+        st.session_state.agent_instance = get_agent_executor()
+        st.session_state.agent_error = ""
+        return st.session_state.agent_instance
+    except Exception as exc:
+        st.session_state.agent_error = str(exc)
+        return None
+
+
+def ask_cnits(question):
+    agent = get_agent()
+    if agent is None:
+        return (
+            "The Nutrition AI is not connected yet. Check your RAG configuration, "
+            "API keys and source documents. "
+            + st.session_state.get("agent_error", "")
+        )
+    prompt = (
+        "Answer the user's child nutrition or immunization question using the "
+        "available trusted source documents. Match the language used by the user "
+        "when possible. Do not diagnose or prescribe treatment. If the source "
+        "documents do not contain the answer, say that clearly.\n\n"
+        f"User question: {question}"
+    )
+    response = agent.invoke(
+        {"messages": [("user", prompt)]},
+        config={"configurable": {"thread_id": "cnits_streamlit_session"}},
+    )
+    messages = response.get("messages", [])
+    if not messages:
+        return "I could not produce a response from the connected assistant."
+    content = getattr(messages[-1], "content", messages[-1])
+    return content if isinstance(content, str) else str(content)
+
+
+def show_disclaimer():
+    st.markdown(
+        '<div class="cnits-disclaimer">⚠️ <b>Medical disclaimer:</b> CNITS provides '
+        'educational information and tracking support. It does not replace medical '
+        'advice, diagnosis or treatment from a qualified healthcare professional. '
+        'For urgent concerns, contact a healthcare professional or health facility.</div>',
+        unsafe_allow_html=True,
     )
 
-    st.divider()
-    st.caption("💚 Healthy Children, Brighter Futures")
-    st.caption("Nutrition • Immunization • Child Health")
 
-# HEADER
-st.markdown("""
-<div class="hero">
-    <h1>🌱 Welcome to CNITS!</h1>
-    <p>Together for healthier, stronger and brighter children.</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Initialize Agent
-has_ai_credentials = all(
-    os.getenv(key) for key in ("OPENAI_API_KEY", "EMBEDDING_API_KEY")
+st.set_page_config(
+    page_title="CNITS | Child Nutrition & Immunization Tracking System",
+    page_icon="👶",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
-if has_ai_credentials and "agent" not in st.session_state:
-    st.session_state.agent = get_agent_executor()
+init_state()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Responsive CNITS styling
+st.markdown(
+    r"""
+<style>
 
-# HOME DASHBOARD
+:root {
+  --teal: #087F79;
+  --deep-teal: #004B48;
+  --ink: #0A4648;
+  --blue: #254D78;
+  --line: #D5E5F4;
+  --page: #F8FBFC;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.stApp {
+  background: var(--page);
+  overflow-x: hidden;
+}
+
+[data-testid="stHeader"] {
+  background: white;
+}
+
+[data-testid="stMainBlockContainer"],
+.block-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem 1.2rem 1rem;
+}
+
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #005550, #003D3B);
+  min-width: 250px;
+}
+
+[data-testid="stSidebar"] > div {
+  padding-top: 1rem;
+}
+
+[data-testid="stSidebar"] * {
+  color: #F5FFFF;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] > div {
+  gap: 5px;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+[data-testid="stHorizontalBlock"] {
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+[data-testid="column"] {
+  min-width: 0 !important;
+}
+
+.cnits-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 130px;
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  border: 1px solid #DCEFE9;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #F1FAF8, #D3F1E6);
+}
+
+.cnits-hero .sprout {
+  font-size: 2rem;
+  margin-right: 8px;
+}
+
+.cnits-hero h1 {
+  display: inline;
+  font-size: 2rem !important;
+  color: #07494A;
+}
+
+.cnits-hero p {
+  margin: 5px 0 0 45px;
+  font-size: 0.95rem;
+}
+
+.cnits-hero .baby {
+  position: absolute;
+  right: 3%;
+  bottom: 0;
+  width: 200px;
+  max-width: 25%;
+  max-height: 125px;
+  object-fit: contain;
+}
+
+.cnits-stat {
+  min-width: 0;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+
+.cnits-stat .label {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.cnits-stat .value {
+  font-size: 1.8rem;
+  font-weight: 750;
+}
+
+.cnits-stat .hint {
+  font-size: 0.75rem;
+}
+
+.cnits-panel,
+.cnits-sidepanel {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+
+.cnits-sidepanel {
+  text-align: center;
+}
+
+.cnits-sidepanel .art {
+  font-size: 2.5rem;
+}
+
+.stButton > button {
+  width: 100%;
+  min-height: 40px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  border-radius: 9px;
+  border: 1px solid var(--teal);
+}
+
+.stButton > button[kind="primary"] {
+  background: var(--teal);
+  color: white;
+}
+
+.stTextInput,
+.stTextArea,
+.stSelectbox,
+.stNumberInput,
+.stFileUploader,
+.stAudioInput {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-testid="stDataFrame"] {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  [data-testid="stMainBlockContainer"],
+  .block-container {
+    padding: 0.7rem;
+  }
+
+  .cnits-hero {
+    padding: 15px;
+  }
+
+  .cnits-hero h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .cnits-hero .baby {
+    opacity: 0.2;
+  }
+
+  .cnits-stat {
+    padding: 8px;
+  }
+
+  .cnits-stat .value {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .cnits-hero .baby {
+    display: none;
+  }
+
+  .cnits-hero p {
+    margin-left: 0;
+  }
+
+  .cnits-stat .label {
+    font-size: 0.7rem;
+  }
+
+  .cnits-stat .value {
+    font-size: 1.15rem;
+  }
+}
+
+.cnits-stat .hint {
+    font-size: .7rem;
+    color: #355D75;
+}
+.cnits-panel, .cnits-sidepanel {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    background: white;
+}
+.cnits-sidepanel {
+    text-align: center;
+}
+.stButton > button {
+    width: 100%;
+    border-radius: 9px;
+    font-weight: 600;
+}
+.stButton > button[kind="primary"] {
+    background: var(--teal);
+    color: white;
+}
+.cnits-disclaimer {
+    color: #607C80;
+    font-size: .75rem;
+    text-align: center;
+    border-top: 1px solid #D8E7E9;
+    margin-top: 12px;
+    padding-top: 8px;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Sidebar navigation
+pages = [
+    "Home",
+    "Nutrition AI",
+    "Immunization Tracker",
+    "Health Center Finder",
+    "Growth & Health Passport",
+    "Settings",
+    "Help",
+]
+with st.sidebar:
+    logo_uri = image_data_uri("cnits_logo.png")
+    if logo_uri:
+        st.image(logo_uri, width=62)
+    st.markdown("# CNITS")
+    st.caption("Child Nutrition & Immunization Tracking System")
+    st.divider()
+    page = st.radio(
+        "Navigation",
+        pages,
+        key="cnits_page",
+        label_visibility="collapsed",
+        format_func=lambda item: {
+            "Home": "⌂   Home",
+            "Nutrition AI": "🍴   Nutrition AI",
+            "Immunization Tracker": "💉   Immunization Tracker",
+            "Health Center Finder": "📍   Health Center Finder",
+            "Growth & Health Passport": "📈   Growth & Health Passport",
+            "Settings": "⚙️   Settings",
+            "Help": "❔   Help",
+        }[item],
+    )
+    st.divider()
+    mother_uri = image_data_uri("sidebar_mother_child_illustration.png")
+    if mother_uri:
+        st.image(mother_uri, use_container_width=True)
+    st.markdown("**Healthy Children, Brighter Futures**")
+    st.caption("Nutrition • Immunization • Child Health")
+    render_recent_activity()
+
+# Welcome banner
+baby_uri = image_data_uri("hero_baby_illustration.png")
+baby_html = f'<img class="baby" src="{baby_uri}" alt="Smiling baby illustration" style="position:absolute; right:3%; bottom:12px; width:200px; max-height:120px; object-fit:contain;">' if baby_uri else ""
+st.markdown(
+    f'<div class="cnits-hero"><span style="font-size:2.0rem;">🌱</span>'
+    f'<h1 style="display:inline; font-size:1.6rem;">Welcome to CNITS!</h1>'
+    f'<p style="margin:5px 0 0 35px; font-size:.9rem;">Together for healthier, stronger and brighter children.</p>{baby_html}</div>',
+    unsafe_allow_html=True,
+)
+
 if page == "Home":
     st.subheader("Child Health Overview")
+    summary = st.session_state.vaccine_summary or {}
+    total_records = len(st.session_state.growth_records)
+    cards = [
+        ("💉", "Overdue Vaccinations", summary.get("overdue", 0), "Keep your child protected", "#FFF0F2", "#8E0A1B"),
+        ("◷", "Due Now", summary.get("due_now", 0), "Stay on schedule", "#FFF6E7", "#4E3004"),
+        ("▦", "Upcoming", summary.get("upcoming", 0), "Plan ahead", "#E9F9F0", "#024222"),
+        ("♟", "Total Records", total_records, "Growing healthier", "#EDF7FF", "#053463"),
+    ]
+    columns = st.columns(4, gap="small")
+    for col, (icon, label, value, hint, tint, color) in zip(columns, cards):
+        with col:
+            st.markdown(
+                f'<div class="cnits-stat" style="background:linear-gradient(135deg,#FFFFFF,{tint})">'
+                f'<div class="label">{icon} &nbsp; {label}</div>'
+                f'<div class="value" style="color:{color}">{value}</div>'
+                f'<div class="hint">{hint}</div></div>',
+                unsafe_allow_html=True,
+            )
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("💉 System Status", "Active" if has_ai_credentials else "Setup Key")
-    c2.metric("📚 Vector DB", "Connected")
-    c3.metric("🏥 Health Centers", "Loaded")
-    c4.metric("🏆 Competition", "Finals 2026")
-
-    st.markdown("### Your CNITS Workspace")
-    st.caption("Choose a feature below to continue.")
-
-    nav1, nav2, nav3, nav4 = st.columns(4)
-
-    if nav1.button("🥗 Nutrition AI", width='stretch'):
-        st.session_state["main_navigation"] = "Nutrition AI"
-        st.rerun()
-
-    if nav2.button("💉 Immunization", width='stretch'):
-        st.session_state["main_navigation"] = "Immunization Tracker"
-        st.rerun()
-
-    if nav3.button("🏥 Health Centers", width='stretch'):
-        st.session_state["main_navigation"] = "Health Center Finder"
-        st.rerun()
-
-    if nav4.button("📈 Growth Passport", width='stretch'):
-        st.session_state["main_navigation"] = "Growth & Health Passport"
-        st.rerun()
-
-    st.markdown("""
-    <div class="panel">
-        <h3>💚 Healthy Today, Brighter Tomorrow</h3>
-        <p>CNITS brings child nutrition, immunization and health record support into one digital workspace.</p>
-        <p class="small-note">Designed to support caregivers, healthcare professionals and competition judges.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# NUTRITION AI (RAG & Voice Integration)
-elif page == "Nutrition AI":
-    st.markdown("## 🥗 Nutrition AI Assistant")
-    st.write("Ask any nutrition question, describe a meal, or record your voice in English or local Nigerian languages.")
-
-    if not has_ai_credentials:
-        st.warning("Please configure your `OPENAI_API_KEY` and `EMBEDDING_API_KEY` in your `.env` file.")
-
-    left, right = st.columns([3, 2], gap="large")
-
-    with left:
-        recording = st.audio_input("🎙️ Record your question")
-
-        if recording is not None:
-            if st.button("Convert Speech to Text"):
-                temp_path = None
-                try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                        f.write(recording.getvalue())
-                        temp_path = f.name
-
-                    with st.spinner("Recognizing speech..."):
-                        transcript = speech_to_text(temp_path)
-
-                    st.session_state["nutrition_question"] = transcript
-                    st.success("Transcription complete.")
-                except Exception as error:
-                    st.error(f"Speech recognition failed: {error}")
-                finally:
-                    if temp_path and os.path.exists(temp_path):
-                        os.remove(temp_path)
-
-        user_input = st.text_area(
-            "Your question or meal description",
-            placeholder="Example: What local foods can I give my 6-month-old baby in Nigeria?",
-            key="nutrition_question",
-            height=130
+    st.markdown("")
+    workspace, side = st.columns([3.2, 1], gap="small")
+    with workspace:
+        tabs = st.tabs(["🍴 Nutrition AI", "💉 Immunization Tracker", "📍 Health Center Finder", "📈 Growth & Health Passport"])
+        with tabs[0]:
+            c_left, c_right = st.columns([1.25, .9], gap="small")
+            with c_left:
+                st.markdown("### 🥗 Nutrition AI")
+                st.caption("Analyze meals and get child nutrition guidance.")
+                age = st.number_input("Child's age (months)", min_value=0, max_value=59, value=12, key="home_child_age")
+                meal = st.text_area("Enter the child's meal", placeholder="e.g. Rice, beans, egg, vegetables...", height=90, key="home_meal")
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✨ Evaluate Meal", type="primary", use_container_width=True):
+                        if meal.strip():
+                            with st.spinner("Checking available nutrition guidance..."):
+                                try:
+                                    st.session_state.home_meal_answer = ask_cnits(
+                                        f"My child is {age} months old. Assess this meal: {meal}"
+                                    )
+                                except Exception as exc:
+                                    st.session_state.home_meal_answer = f"Unable to get a response: {exc}"
+                        else:
+                            st.warning("Enter the meal before evaluating it.")
+                with b2:
+                    recording = st.audio_input("🎙️ Speak instead", key="home_meal_audio")
+                    if recording and st.button("Transcribe & ask", key="home_transcribe", use_container_width=True):
+                        if speech_to_text is None:
+                            st.warning("Speech support is unavailable.")
+                        else:
+                            audio_path = None
+                            try:
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                                    tmp.write(recording.getvalue())
+                                    audio_path = tmp.name
+                                transcript = speech_to_text(audio_path)
+                                if transcript:
+                                    st.session_state.home_meal = transcript
+                                    st.session_state.home_meal_answer = ask_cnits(f"My child is {age} months old. Question: {transcript}")
+                            finally:
+                                if audio_path and os.path.exists(audio_path):
+                                    os.remove(audio_path)
+                if st.session_state.home_meal_answer:
+                    st.markdown("**Nutrition guidance**")
+                    st.write(st.session_state.home_meal_answer)
+            with c_right:
+                st.markdown(
+                    '<div class="cnits-panel" style="background:linear-gradient(145deg,#F0FBF8,#E5F7F1);">'
+                    '<h3>Get AI-powered nutrition advice</h3>'
+                    '<p>✓ Analyzes meal nutrition</p><p>✓ Identifies possible nutrient gaps</p>'
+                    '<p>✓ Gives simple, actionable tips</p></div>',
+                    unsafe_allow_html=True,
+                )
+        with tabs[1]:
+            st.markdown("### Smart Immunization Tracker")
+            if st.button("Open Immunization Tracker", key="home_open_vaccine"):
+                st.session_state.cnits_page = "Immunization Tracker"
+                st.rerun()
+        with tabs[2]:
+            st.markdown("### Health Center Finder")
+            if st.button("Open Health Center Finder", key="home_open_centers"):
+                st.session_state.cnits_page = "Health Center Finder"
+                st.rerun()
+        with tabs[3]:
+            st.markdown("### Growth & Health Passport")
+            if st.button("Open Growth Passport", key="home_open_growth"):
+                st.session_state.cnits_page = "Growth & Health Passport"
+                st.rerun()
+    with side:
+        hands_uri = image_data_uri("health_hands_heart_illustration.png")
+        if hands_uri:
+            st.image(hands_uri, use_container_width=True)
+        st.markdown(
+            '<div class="cnits-sidepanel"><div style="font-size:2rem;">💚</div>'
+            '<h3>Healthy Today,<br>Brighter Tomorrow</h3>'
+            '<p>CNITS helps you track your child’s nutrition and health records.</p></div>',
+            unsafe_allow_html=True,
         )
+    show_disclaimer()
 
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            evaluate_btn = st.button("✨ Evaluate with AI", width='stretch', disabled=not has_ai_credentials)
-        with col_btn2:
-            tts_btn = st.button("🔊 Read Aloud", width='stretch')
+elif page == "Nutrition AI":
+    st.header("🥗 Nutrition AI")
+    st.write("Ask about child feeding and nutrition by text or voice.")
+    age = st.number_input("Child's age (months)", min_value=0, max_value=59, value=12, key="nutrition_age")
+    
+    for message in st.session_state.nutrition_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-        if evaluate_btn and user_input.strip():
-            with st.spinner("Analyzing NPHCDA & Health Guidelines..."):
-                config = {"configurable": {"thread_id": "streamlit_user_session"}}
-                prompt_instruction = (
-                    f"Detect the language of the following user question and reply in that exact same language. "
-                    f"User question: {user_input}"
-                )
-                response = st.session_state.agent.invoke(
-                    {"messages": [("user", prompt_instruction)]},
-                    config=config
-                )
-                bot_reply = response["messages"][-1].content
-                st.markdown("### 🤖 AI Response:")
-                st.success(bot_reply)
-                st.session_state["last_bot_reply"] = bot_reply
+    text_question = st.chat_input("Ask about feeding, nutrition or child health...")
+    if text_question:
+        st.session_state.nutrition_messages.append({"role": "user", "content": text_question})
+        with st.chat_message("user"):
+            st.markdown(text_question)
+        with st.chat_message("assistant"):
+            answer = ask_cnits(f"Child age: {age} months. Question: {text_question}")
+            st.markdown(answer)
+        st.session_state.nutrition_messages.append({"role": "assistant", "content": answer})
+    show_disclaimer()
 
-        if tts_btn:
-            text_to_read = st.session_state.get("last_bot_reply", user_input)
-            if text_to_read.strip():
-                audio_path = None
-                try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
-                        audio_path = f.name
-                    text_to_speech(text_to_read, audio_path)
-                    with open(audio_path, "rb") as f:
-                        st.audio(f.read(), format="audio/mp3")
-                except Exception as error:
-                    st.error(f"Text-to-speech failed: {error}")
-                finally:
-                    if audio_path and os.path.exists(audio_path):
-                        os.remove(audio_path)
-            else:
-                st.warning("No text available to read.")
-
-    with right:
-        st.markdown("""
-        <div class="panel">
-            <h3>👶 Get Nutrition Support</h3>
-            <p>CNITS nutrition guidance helps users:</p>
-            <p>✓ Review meal information against NFCMS data</p>
-            <p>✓ Identify possible nutrient gaps</p>
-            <p>✓ Explore local Nigerian food pairings (crayfish, soybeans, pap)</p>
-            <p>✓ Interact through voice or text in local languages</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# IMMUNIZATION TRACKER
 elif page == "Immunization Tracker":
     st.header("💉 Smart Immunization Schedule Tracker")
-    st.write("Calculate your child's vaccination timeline based on the official Nigerian NPHCDA schedule.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        dob = st.date_input("Child's Date of Birth", value=date(2026, 1, 1))
-    with col2:
-        as_of = st.date_input("Tracking Reference Date", value=date.today())
-
-    if dob > as_of:
-        st.error("Date of birth cannot be in the future.")
+    st.write("Calculate the child's vaccination timeline from their date of birth.")
+    if not all([build_vaccine_schedule, calculate_age, group_vaccines_by_status]):
+        st.error("The vaccine tracker module could not be imported.")
     else:
-        age_info = calculate_age(dob, as_of)
-        st.info(f"**Current Age:** {age_info['years']} yrs, {age_info['total_months'] % 12} mos ({age_info['total_weeks']} weeks / {age_info['total_days']} days)")
+        col1, col2 = st.columns(2)
+        with col1:
+            dob = st.date_input("Child's date of birth", value=date(2026, 1, 1), max_value=date.today(), key="tracker_dob")
+        with col2:
+            as_of = st.date_input("Tracking reference date", value=date.today(), key="tracker_as_of")
+        if dob > as_of:
+            st.error("Date of birth cannot be after the reference date.")
+        else:
+            age_info = calculate_age(dob, as_of)
+            st.info(f"**Current age:** {age_info['years']} years, {age_info['total_months'] % 12} months")
+            records = build_vaccine_schedule(dob, as_of=as_of)
+            grouped = group_vaccines_by_status(records)
+            summary = {
+                "overdue": len(grouped.get("overdue", [])),
+                "due_now": len(grouped.get("due_now", [])),
+                "upcoming": len(grouped.get("upcoming", [])),
+                "completed": len(grouped.get("completed", [])),
+            }
+            st.session_state.vaccine_summary = summary
+            cols = st.columns(4)
+            for col, label, key in zip(cols, ["Overdue", "Due Now", "Upcoming", "Completed"], ["overdue", "due_now", "upcoming", "completed"]):
+                col.metric(label, summary[key])
+            st.dataframe(
+                [{
+                    "Vaccine": r.get("vaccine", ""),
+                    "Milestone": r.get("target_age_label", ""),
+                    "Due Date": r.get("due_date_label", ""),
+                    "Status": r.get("status", ""),
+                    "Dosage": r.get("dosage", ""),
+                    "Route": r.get("route", ""),
+                    "Site": r.get("site", ""),
+                } for r in records],
+                use_container_width=True,
+                hide_index=True
+            )
 
-        records = build_vaccine_schedule(dob, as_of=as_of)
-        grouped = group_vaccines_by_status(records)
-
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("🔴 Overdue", len(grouped["overdue"]))
-        m2.metric("🟢 Due Now", len(grouped["due_now"]))
-        m3.metric("🔵 Upcoming", len(grouped["upcoming"]))
-        m4.metric("✅ Completed", len(grouped["completed"]))
-
-        st.divider()
-        display_data = []
-        for r in records:
-            display_data.append({
-                "Vaccine": r["vaccine"],
-                "Milestone": r["target_age_label"],
-                "Due Date": r["due_date_label"],
-                "Status": r["status"],
-                "Dosage": r["dosage"],
-                "Route": r["route"],
-                "Site": r["site"]
-            })
-        st.dataframe(display_data, width='stretch', hide_index=True)
-
-# HEALTH CENTERS
 elif page == "Health Center Finder":
     if display_health_center_finder:
         display_health_center_finder()
     else:
         st.info("Health center finder module loading...")
 
-# GROWTH & HEALTH PASSPORT
 elif page == "Growth & Health Passport":
     if render_pdf_generator:
         render_pdf_generator()
     else:
         st.info("PDF generator module loading...")
 
-# SETTINGS
 elif page == "Settings":
     st.header("⚙️ Settings")
-    st.write("Language preferences, API configuration, and user settings.")
+    st.write("Manage app configuration and preferences.")
 
-# HELP
 elif page == "Help":
-    st.header("❓ Help & Support Center")
-    st.markdown("""
-        <div style="background-color: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <h3 style="color: #064E4A; margin-top: 0;">📌 Quick User Guide</h3>
-            <ul>
-                <li><b>Nutrition AI:</b> Ask questions or record voice notes to get localized nutritional advice.</li>
-                <li><b>Immunization Tracker:</b> Automatically calculates NPHCDA routine childhood immunization schedules.</li>
-                <li><b>Health Center Finder:</b> Locate nearby primary healthcare facilities instantly.</li>
-                <li><b>Growth & Health Passport:</b> Export downloadable digital health passport PDFs.</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)
+    st.header("❔ Help & Support")
+    st.write("Refer to the user guide or reach out to healthcare support teams.")

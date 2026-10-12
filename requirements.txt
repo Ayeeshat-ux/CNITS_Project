@@ -20,3 +20,5 @@ gTTS
 reportlab
 ics
 pytest
+pypdf
+python-docx
