@@ -55,7 +55,7 @@ def get_agent_executor():
     # 4. Tools Definition
     @tool
     def search_health_docs(query: str) -> str:
-        """Searches the local CNITS health database for child nutrition, growth indicators, and immunization guidelines."""
+        """Searches the local PikinCare health database for child nutrition, growth indicators, and immunization guidelines."""
         docs = health_retriever.invoke(query)
         if not docs:
             return "No relevant health documents found in the database."
@@ -77,7 +77,7 @@ def get_agent_executor():
 
     # 5. System Prompt & Graph Assembly
     system_prompt = (
-        "You are an expert AI assistant for the Child Nutrition and Immunization Tracking System (CNITS) in Nigeria. "
+        "You are an expert AI assistant for PikinCare in Nigeria. "
         "Always search local health documents first using `search_health_docs` for immunization schedules, "
         "WHO growth standards, and nutrition guidelines. "
         "If information is missing or requires up-to-date real-time context, use `search_web`. "
@@ -98,7 +98,7 @@ def get_agent_executor():
 
 # Direct terminal execution test block
 if __name__ == "__main__":
-    print("Initializing CNITS RAG Engine...")
+    print("Initializing PikinCare RAG Engine...")
     
     agent = get_agent_executor()
     config = {"configurable": {"thread_id": "terminal_test"}}
@@ -111,5 +111,5 @@ if __name__ == "__main__":
         config=config
     )
     
-    print("\nCNITS Assistant Response:")
+    print("\nPikinCare Assistant Response:")
     print(response["messages"][-1].content)
