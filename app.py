@@ -24,311 +24,366 @@ except ImportError:
     render_pdf_generator = None
 
 st.set_page_config(
-    page_title="PikinCare | National Child Health & Immunization Platform",
+    page_title="PikinCare | National Child Health Platform",
     page_icon="👶",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Professional Institutional Design System CSS
+# ============================================================
+# MODERN UI/UX & STYLING
+# ============================================================
 st.markdown("""
 <style>
-/* Global App Styling */
+/* Main App Surface */
 .stApp {
     background: #F8FBFA;
     color: #102A2A;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Sidebar Styling */
+/* Sidebar Gradient */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #023330 0%, #064E4A 100%);
     border-right: 1px solid #085D57;
 }
-[data-testid="stSidebar"] * {
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3, 
+[data-testid="stSidebar"] h4, 
+[data-testid="stSidebar"] label, 
+[data-testid="stSidebar"] .stMarkdown,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {
     color: #FFFFFF !important;
 }
-[data-testid="stSidebar"] .stRadio label {
-    padding: 10px 14px;
+[data-testid="stSidebar"] summary {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
     border-radius: 8px;
-    transition: background 0.2s ease;
-}
-[data-testid="stSidebar"] .stRadio label:hover {
-    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Typography & Headings */
-h1, h2, h3, h4 {
-    color: #023330;
+/* Sidebar Brand Header */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
     font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 2px;
+}
+.sidebar-brand-icon {
+    font-size: 30px;
 }
 
-/* Hero Banner */
-.hero-container {
-    background: linear-gradient(135deg, #E2F4EE 0%, #C8EBE1 100%);
-    padding: 32px 36px;
-    border-radius: 16px;
-    border: 1px solid #B4E3D4;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(6, 78, 74, 0.04);
-}
-.hero-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: #023330;
-    margin-bottom: 8px;
-}
-.hero-subtitle {
-    font-size: 1.1rem;
-    color: #235552;
-    margin-bottom: 0;
+/* Sidebar Disclaimer */
+.sidebar-disclaimer {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.75);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 12px;
+    margin-top: 20px;
+    line-height: 1.4;
 }
 
-/* Cards & Panels */
-.institutional-card {
-    background: #FFFFFF;
-    padding: 24px;
-    border-radius: 14px;
-    border: 1px solid #E0ECE8;
-    box-shadow: 0 2px 12px rgba(16, 42, 42, 0.03);
-    margin-bottom: 20px;
+/* Gemini Chat Disclaimer Footer */
+.gemini-footer-disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: #5C7A77;
+    margin-top: 8px;
+    margin-bottom: 4px;
 }
 
-/* Metrics Styling */
-[data-testid="stMetric"] {
-    background: #FFFFFF;
-    padding: 18px 20px;
-    border-radius: 12px;
-    border: 1px solid #D5E6E1;
-    box-shadow: 0 2px 6px rgba(6, 78, 74, 0.02);
-}
-[data-testid="stMetricValue"] {
-    font-size: 1.4rem !important;
-    color: #064E4A !important;
-    font-weight: 700 !important;
-}
-[data-testid="stMetricLabel"] {
-    color: #4A6E6B !important;
-    font-weight: 600 !important;
-}
-
-/* Buttons */
+/* Custom Primary Buttons */
 .stButton > button {
     background: #064E4A;
-    color: white;
+    color: white !important;
     border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
+    border-radius: 20px;
+    padding: 6px 14px;
     font-weight: 600;
-    transition: all 0.2s ease;
 }
 .stButton > button:hover {
     background: #043A37;
-    color: white;
-    box-shadow: 0 4px 12px rgba(6, 78, 74, 0.15);
+    color: white !important;
 }
 
-/* Inputs & Textareas */
-.stTextArea textarea, .stTextInput input {
-    background: #FFFFFF;
-    border: 1px solid #CBDCD6;
-    border-radius: 8px;
-    color: #102A2A;
-}
-.stTextArea textarea:focus, .stTextInput input:focus {
-    border-color: #064E4A;
-    box-shadow: 0 0 0 1px #064E4A;
+/* Popover (+) button styling */
+[data-testid="stPopover"] button {
+    background: #E2ECE9 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 18px !important;
+    color: #064E4A !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
+# ============================================================
+# SESSION STATE INITIALIZATION
+# ============================================================
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "user_name" not in st.session_state:
+    st.session_state.user_name = "Guest Parent"
+if "session_id" not in st.session_state:
+    st.session_state.session_id = "pikincare_session_1"
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": "👋 Hello! I am your **PikinCare Nutrition & Child Health Assistant**. How can I help you and your child today with healthy meal plans, immunization schedules, or healthcare guidelines?"
+        }
+    ]
+
+# Recent Chat History Tracking
+if "recent_chats" not in st.session_state:
+    st.session_state.recent_chats = [
+        "👶 Child malaria care guidelines",
+        "💉 Routine immunization schedule",
+        "🥗 Balanced nutrition for children & toddlers"
+    ]
+
+# Initialize Agent
+has_ai_credentials = all(os.getenv(key) for key in ("OPENAI_API_KEY", "EMBEDDING_API_KEY"))
+if has_ai_credentials and "agent" not in st.session_state:
+    st.session_state.agent = get_agent_executor()
+
+
+# ============================================================
+# SIGN IN / AUTHENTICATION MODAL DIALOG
+# ============================================================
+@st.dialog("🔐 Sign In to PikinCare")
+def show_login_dialog():
+    st.markdown("Access personalized growth tracking and saved child health records.")
+    
+    tab_login, tab_signup = st.tabs(["🔑 Sign In", "📝 Create Account"])
+    
+    with tab_login:
+        email = st.text_input("📧 Email Address", key="login_email")
+        password = st.text_input("🔒 Password", type="password", key="login_pass")
+        if st.button("Sign In ➔", use_container_width=True, key="btn_login_submit"):
+            if email:
+                st.session_state.user_name = email.split("@")[0].capitalize()
+                st.session_state.authenticated = True
+                st.toast(f"Welcome back, {st.session_state.user_name}!", icon="🎉")
+                st.rerun()
+            else:
+                st.error("Please enter a valid email.")
+
+    with tab_signup:
+        full_name = st.text_input("👤 Full Name", key="signup_name")
+        signup_email = st.text_input("📧 Email Address", key="signup_email")
+        signup_pass = st.text_input("🔒 Password", type="password", key="signup_pass")
+        if st.button("Create Account ✨", use_container_width=True, key="btn_signup_submit"):
+            if full_name and signup_email:
+                st.session_state.user_name = full_name
+                st.session_state.authenticated = True
+                st.toast("Account created successfully!", icon="✅")
+                st.rerun()
+            else:
+                st.error("Please fill in all details.")
+
+
+# ============================================================
 # SIDEBAR NAVIGATION
+# ============================================================
 with st.sidebar:
-    st.markdown("### 👶 PikinCare")
-    st.caption("National Child Health & Immunization Platform")
+    # 1. BRAND HEADER WITH CHILD ICON
+    st.markdown("""
+    <div class="sidebar-brand">
+        <span class="sidebar-brand-icon">👶</span>
+        <span>PikinCare</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption("🇳🇬 National Child Health Platform")
     st.divider()
 
+    # 2. NAVIGATION TABS WITH ICONS
     page = st.radio(
         "Navigation",
         [
-            "Home",
-            "Nutrition AI",
-            "Immunization Tracker",
-            "Health Center Finder",
-            "Growth & Health Passport",
-            "Settings",
-            "Help"
+            "🥗 Nutrition & AI Assistant",
+            "💉 Immunization Tracker",
+            "🏥 Health Center Finder",
+            "📈 Growth & Health Passport"
         ],
         label_visibility="collapsed",
         key="main_navigation"
     )
 
     st.divider()
-    st.markdown("<p style='font-size: 12px; opacity: 0.8; text-align: center;'>🇳🇬 Built for Primary Healthcare Delivery Across Nigeria</p>", unsafe_allow_html=True)
 
-# INITIALIZE AGENT & SESSION STATE
-has_ai_credentials = all(
-    os.getenv(key) for key in ("OPENAI_API_KEY", "EMBEDDING_API_KEY")
-)
-if has_ai_credentials and "agent" not in st.session_state:
-    st.session_state.agent = get_agent_executor()
+    # 3. INTERACTIVE & DELETABLE RECENT CONVERSATIONS SECTION
+    with st.expander("🕒 Recent Conversations", expanded=True):
+        if st.session_state.recent_chats:
+            # Iterate over a copy to safely handle deletions
+            for idx, chat_title in enumerate(list(st.session_state.recent_chats)):
+                c_load, c_del = st.columns([5, 1], gap="small")
+                with c_load:
+                    if st.button(chat_title, key=f"load_chat_{idx}", use_container_width=True):
+                        st.toast(f"Loaded conversation: {chat_title}", icon="💬")
+                with c_del:
+                    if st.button("❌", key=f"del_chat_{idx}", use_container_width=True):
+                        st.session_state.recent_chats.remove(chat_title)
+                        st.rerun()
+            
+            if st.button("🗑️ Clear All History", use_container_width=True, key="clear_all_history"):
+                st.session_state.recent_chats = []
+                st.rerun()
+        else:
+            st.caption("No recent conversations.")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# --- HOME DASHBOARD ---
-if page == "Home":
+    # 4. SIDEBAR DISCLAIMER FOOTER
     st.markdown("""
-    <div class="hero-container">
-        <div class="hero-title">🌱 PikinCare Digital Health System</div>
-        <div class="hero-subtitle">Empowering caregivers, field workers, and health systems with NPHCDA-aligned tracking, local nutrition intelligence, and verified clinical guidance.</div>
+    <div class="sidebar-disclaimer">
+        ⚠️ <b>Disclaimer:</b> Educational decision-support tool aligned with NPHCDA standards.
     </div>
     """, unsafe_allow_html=True)
 
-    st.subheader("System Performance & Overview")
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("🛡️ Protection Status", "Active", "Standards Grade")
-    c2.metric("💉 NPHCDA Protocol", "Synced", "Official Schedule")
-    c3.metric("🥗 AI Nutrition Engine", "Online", "Hybrid RAG + Web")
-    c4.metric("🏥 Health Coverage", "Nationwide", "Verified Map Data")
+# ============================================================
+# TOP WEB APP HEADER (WITH STANDARD SIGN-IN BUTTON)
+# ============================================================
+header_col1, header_col2 = st.columns([7, 3])
 
-    st.markdown("### Quick Access Modules")
-    
-    col_a, col_b, col_c, col_d = st.columns(4)
-    with col_a:
-        if st.button("🥗 Nutrition AI", use_container_width=True):
-            st.session_state["main_navigation"] = "Nutrition AI"
-            st.rerun()
-    with col_b:
-        if st.button("💉 Immunization", use_container_width=True):
-            st.session_state["main_navigation"] = "Immunization Tracker"
-            st.rerun()
-    with col_c:
-        if st.button("🏥 Health Centers", use_container_width=True):
-            st.session_state["main_navigation"] = "Health Center Finder"
-            st.rerun()
-    with col_d:
-        if st.button("📈 Health Passport", use_container_width=True):
-            st.session_state["main_navigation"] = "Growth & Health Passport"
-            st.rerun()
+with header_col1:
+    st.markdown(f"### {page}")
 
-    st.markdown("""
-    <div class="institutional-card" style="margin-top: 24px;">
-        <h3>📌 Clinical Governance & Mission</h3>
-        <p>PikinCare bridges critical gaps in child survival by providing accurate tracking tools, instant multilingual clinical support, and dependable clinic locations. Designed to support resilient primary healthcare delivery across Nigeria.</p>
-    </div>
-    """, unsafe_allow_html=True)
+with header_col2:
+    if st.session_state.authenticated:
+        st.markdown(f"🟢 **{st.session_state.user_name}**")
+        if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
+            st.session_state.authenticated = False
+            st.session_state.user_name = "Guest Parent"
+            st.rerun()
+    else:
+        if st.button("🔑 Sign In / Sign Up", key="btn_signin_modal", use_container_width=True):
+            show_login_dialog()
 
-# --- NUTRITION AI ---
-elif page == "Nutrition AI":
-    st.markdown("## 🥗 PikinCare Clinical & Nutrition AI Assistant")
-    st.markdown("<p style='color: #4A6E6B;'>Ask questions, evaluate infant diets, or record voice notes in local languages backed by NPHCDA & WHO guidelines.</p>", unsafe_allow_html=True)
+st.divider()
+
+
+# ============================================================
+# PAGE 1: 🥗 NUTRITION & AI ASSISTANT
+# ============================================================
+if page == "🥗 Nutrition & AI Assistant":
+    st.markdown("## 🥗 Nutrition & Child Health AI Assistant")
+    st.markdown("<p style='color: #4A6E6B; font-size: 15px;'>Your expert AI companion for infant & child nutrition, NPHCDA immunization timelines, and pediatric healthcare guidance.</p>", unsafe_allow_html=True)
 
     if not has_ai_credentials:
-        st.warning("⚠️ API credentials missing. Please check your `.env` configuration for `OPENAI_API_KEY` and `EMBEDDING_API_KEY`.")
+        st.warning("⚠️ API credentials missing. Please verify `OPENAI_API_KEY` and `EMBEDDING_API_KEY` in `.env`.")
 
-    left, right = st.columns([3, 2], gap="large")
+    # 1. RENDER CHAT HISTORY FEED
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
+            st.markdown(msg["content"])
 
-    with left:
-        with st.container():
-            recording = st.audio_input("🎙️ Voice Consultation (Record Audio)")
+    # 2. UNIFIED GEMINI-STYLE INPUT BAR
+    attached_file = None
+    audio_recording = None
 
-            if recording is not None:
-                if st.button("Convert Speech to Text"):
-                    temp_path = None
-                    try:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                            f.write(recording.getvalue())
-                            temp_path = f.name
+    with st.container():
+        with st.form(key="gemini_chat_form", clear_on_submit=True):
+            col_add, col_input, col_send = st.columns([1, 12, 2])
 
-                        with st.spinner("Processing speech audio..."):
-                            transcript = speech_to_text(temp_path)
+            with col_add:
+                with st.popover("➕"):
+                    st.markdown("**Attach Media or Voice**")
+                    attached_file = st.file_uploader("Upload File/Image", type=["pdf", "txt", "csv", "png", "jpg"])
+                    audio_recording = st.audio_input("Record Voice")
 
-                        st.session_state["nutrition_question"] = transcript
-                        st.success("Transcription successful.")
-                    except Exception as error:
-                        st.error(f"Speech recognition error: {error}")
-                    finally:
-                        if temp_path and os.path.exists(temp_path):
-                            os.remove(temp_path)
+            with col_input:
+                user_text_input = st.text_input(
+                    "Ask about child nutrition, meal plans, vaccines, or health...",
+                    placeholder="Ask a question about child nutrition, feeding, or vaccines...",
+                    label_visibility="collapsed",
+                    key="gemini_prompt"
+                )
 
-            user_input = st.text_area(
-                "Clinical Inquiry or Meal Description",
-                placeholder="Example: What local complementary foods can I introduce for an 8-month-old infant in Nigeria?",
-                key="nutrition_question",
-                height=140
-            )
+            with col_send:
+                submit_btn = st.form_submit_button("Send ➔", use_container_width=True)
 
-            col_btn1, col_btn2 = st.columns(2)
-            with col_btn1:
-                evaluate_btn = st.button("✨ Evaluate with AI", use_container_width=True, disabled=not has_ai_credentials)
-            with col_btn2:
-                tts_btn = st.button("🔊 Read Aloud Response", use_container_width=True)
+    # Process Voice Input
+    active_prompt = None
+    if audio_recording is not None:
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+                f.write(audio_recording.getvalue())
+                temp_path = f.name
+            with st.spinner("🎙️ Transcribing voice note..."):
+                active_prompt = speech_to_text(temp_path)
+        except Exception as e:
+            st.error(f"Voice error: {e}")
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
 
-            if evaluate_btn and user_input.strip():
-                with st.spinner("Synthesizing clinical guidelines & local data..."):
-                    config = {"configurable": {"thread_id": "streamlit_user_session"}}
-                    prompt_instruction = (
-                        f"Detect the language of the following user question and reply in that exact same language. "
-                        f"User question: {user_input}"
-                    )
+    # Process File Context
+    file_context = ""
+    if attached_file is not None:
+        file_context = f"\n[Attached File: {attached_file.name}]"
+        st.toast(f"Attached: {attached_file.name}", icon="📎")
+
+    user_prompt = user_text_input.strip() or active_prompt
+    if submit_btn and user_prompt:
+        full_query = user_prompt + file_context
+        
+        st.session_state.messages.append({"role": "user", "content": full_query})
+        
+        # Add to recent chats tracker
+        recent_entry = "💬 " + user_prompt[:25] + ("..." if len(user_prompt) > 25 else "")
+        if recent_entry not in st.session_state.recent_chats:
+            st.session_state.recent_chats.insert(0, recent_entry)
+        
+        with st.chat_message("assistant", avatar="🤖"):
+            if has_ai_credentials:
+                with st.spinner("🧠 Thinking..."):
+                    config = {"configurable": {"thread_id": st.session_state.session_id}}
                     response = st.session_state.agent.invoke(
-                        {"messages": [("user", prompt_instruction)]},
+                        {"messages": [("user", full_query)]},
                         config=config
                     )
-                    bot_reply = response["messages"][-1].content
-                    st.markdown("### 🤖 Clinical AI Response:")
-                    st.info(bot_reply)
-                    st.session_state["last_bot_reply"] = bot_reply
+                    reply = response["messages"][-1].content
+                    st.markdown(reply)
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
+            else:
+                st.error("API credentials not available.")
+        st.rerun()
 
-            if tts_btn:
-                text_to_read = st.session_state.get("last_bot_reply", user_input)
-                if text_to_read.strip():
-                    audio_path = None
-                    try:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
-                            audio_path = f.name
-                        text_to_speech(text_to_read, audio_path)
-                        with open(audio_path, "rb") as f:
-                            st.audio(f.read(), format="audio/mp3")
-                    except Exception as error:
-                        st.error(f"Text-to-speech error: {error}")
-                    finally:
-                        if audio_path and os.path.exists(audio_path):
-                            os.remove(audio_path)
-                else:
-                    st.warning("No response text available for audio playback.")
+    # 3. GEMINI DISCLAIMER FOOTER UNDER CHAT DOCK
+    st.markdown("""
+    <div class="gemini-footer-disclaimer">
+        🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified doctor.
+    </div>
+    """, unsafe_allow_html=True)
 
-    with right:
-        st.markdown("""
-        <div class="institutional-card">
-            <h4>💡 Decision Support Features</h4>
-            <ul style="padding-left: 20px; line-height: 1.6; color: #235552;">
-                <li><b>Evidence-Anchored RAG:</b> Queries curated local data indices first to ensure zero hallucination on vital vaccines.</li>
-                <li><b>Dynamic Web Fallback:</b> Automatically cross-references live health notices or updates when necessary.</li>
-                <li><b>Local Nutrient Optimization:</b> Recommends affordable local food pairings (e.g., crayfish, soybeans, iron-fortified pap).</li>
-                <li><b>Multilingual Accessibility:</b> Designed for seamless communication across diverse communities.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
 
-# --- IMMUNIZATION TRACKER ---
-elif page == "Immunization Tracker":
-    st.markdown("## 💉 Smart Immunization Schedule Tracker")
-    st.markdown("<p style='color: #4A6E6B;'>Automated timeline calculator strictly aligned with the National Primary Health Care Development Agency (NPHCDA) guidelines.</p>", unsafe_allow_html=True)
+# ============================================================
+# PAGE 2: 💉 IMMUNIZATION TRACKER
+# ============================================================
+elif page == "💉 Immunization Tracker":
+    st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator.</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        dob = st.date_input("Child's Date of Birth", value=date(2026, 1, 1))
+        dob = st.date_input("🗓️ Child's Date of Birth", value=date(2026, 1, 1))
     with col2:
-        as_of = st.date_input("Tracking Reference Date", value=date.today())
+        as_of = st.date_input("📌 Tracking Reference Date", value=date.today())
 
-    if dob > as_of:
-        st.error("Date of birth cannot be set in the future.")
-    else:
+    if dob <= as_of:
         age_info = calculate_age(dob, as_of)
-        st.success(f"**Calculated Child Age:** {age_info['years']} years, {age_info['total_months'] % 12} months ({age_info['total_weeks']} weeks / {age_info['total_days']} days)")
+        st.info(f"👶 **Current Age:** {age_info['years']} yrs, {age_info['total_months'] % 12} mos ({age_info['total_weeks']} weeks)")
 
         records = build_vaccine_schedule(dob, as_of=as_of)
         grouped = group_vaccines_by_status(records)
@@ -340,50 +395,29 @@ elif page == "Immunization Tracker":
         m4.metric("✅ Completed", len(grouped["completed"]))
 
         st.divider()
-        display_data = []
-        for r in records:
-            display_data.append({
-                "Vaccine": r["vaccine"],
-                "Milestone": r["target_age_label"],
-                "Due Date": r["due_date_label"],
-                "Status": r["status"],
-                "Dosage": r["dosage"],
-                "Route": r["route"],
-                "Site": r["site"]
-            })
+        display_data = [{
+            "Vaccine": r["vaccine"], "Milestone": r["target_age_label"],
+            "Due Date": r["due_date_label"], "Status": r["status"], "Route": r["route"]
+        } for r in records]
+        
         st.dataframe(display_data, use_container_width=True, hide_index=True)
 
-# --- HEALTH CENTERS ---
-elif page == "Health Center Finder":
+
+# ============================================================
+# PAGE 3: 🏥 HEALTH CENTER FINDER
+# ============================================================
+elif page == "🏥 Health Center Finder":
     if display_health_center_finder:
         display_health_center_finder()
     else:
         st.info("Loading health center discovery module...")
 
-# --- GROWTH & HEALTH PASSPORT ---
-elif page == "Growth & Health Passport":
+
+# ============================================================
+# PAGE 4: 📈 GROWTH & HEALTH PASSPORT
+# ============================================================
+elif page == "📈 Growth & Health Passport":
     if render_pdf_generator:
         render_pdf_generator()
     else:
         st.info("Loading digital health passport generator...")
-
-# --- SETTINGS ---
-elif page == "Settings":
-    st.markdown("## ⚙️ System Configuration & Preferences")
-    st.markdown("<p style='color: #4A6E6B;'>Manage application settings, local data caching, and user accessibility options.</p>", unsafe_allow_html=True)
-    st.info("All system parameters are currently operating on standard production defaults.")
-
-# --- HELP ---
-elif page == "Help":
-    st.markdown("## ❓ PikinCare Support & Documentation")
-    st.markdown("""
-        <div class="institutional-card">
-            <h3 style="color: #064E4A; margin-top: 0;">📖 Operational Guide for Evaluators</h3>
-            <ul style="line-height: 1.8; color: #235552;">
-                <li><b>Nutrition AI:</b> Use text or speech input to query nutritional standards and infant care practices.</li>
-                <li><b>Immunization Tracker:</b> Input the child's birth date to instantly generate an audit-ready NPHCDA schedule.</li>
-                <li><b>Health Center Finder:</b> Discover registered primary healthcare clinics and mapping services across Nigeria.</li>
-                <li><b>Growth & Health Passport:</b> Compile records into official downloadable clinical PDF summaries.</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)

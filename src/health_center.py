@@ -1,4 +1,3 @@
-
 # src/health_center.py
 
 import pandas as pd
@@ -13,6 +12,14 @@ from urllib.parse import quote_plus
 
 HEALTH_CENTERS = [
     # Lagos State
+    {
+        "name": "Surulere Primary Health Centre",
+        "community": "Surulere, Lagos State",
+        "address": "Tejuosho Road, Surulere, Lagos",
+        "latitude": 6.5059,
+        "longitude": 3.3610,
+        "hours": "24 hours",
+    },
     {
         "name": "Odonla Primary Healthcare Centre",
         "community": "Odonla, Ikorodu North, Lagos",
@@ -143,7 +150,7 @@ def create_map_search_url(
 def search_health_centers(search_text):
     """
     Search the local healthcare centre data
-    by centre name or community.
+    by centre name, community, or address.
     """
     df = get_health_centers()
 
@@ -158,6 +165,12 @@ def search_health_centers(search_text):
         )
         |
         df["community"].str.contains(
+            search_text,
+            case=False,
+            na=False
+        )
+        |
+        df["address"].str.contains(
             search_text,
             case=False,
             na=False
@@ -192,7 +205,7 @@ def display_health_center_finder():
 
     search = st.text_input(
         "Search for a healthcare centre (by name or location)",
-        placeholder="Example: Odonla PHC or Garki Abuja"
+        placeholder="Example: Surulere PHC or Garki Abuja"
     )
 
     # --------------------------------------------------------
