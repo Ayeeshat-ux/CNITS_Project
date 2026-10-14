@@ -69,13 +69,21 @@ st.markdown("""
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: #FFFFFF;
     margin-bottom: 2px;
 }
 .sidebar-brand-icon {
-    font-size: 30px;
+    font-size: 32px;
+}
+
+/* Sidebar Subtitle Styling */
+.sidebar-subtitle {
+    font-size: 13px;
+    color: #A3E6DF !important;
+    font-weight: 500;
+    margin-bottom: 12px;
 }
 
 /* Sidebar Disclaimer */
@@ -198,14 +206,16 @@ def show_login_dialog():
 # SIDEBAR NAVIGATION
 # ============================================================
 with st.sidebar:
-    # 1. BRAND HEADER WITH CHILD ICON
+    # 1. BRAND HEADER WITH CHILD ICON & CLEAN SUBTITLE
     st.markdown("""
     <div class="sidebar-brand">
         <span class="sidebar-brand-icon">👶</span>
         <span>PikinCare</span>
     </div>
+    <div class="sidebar-subtitle">
+        National Child Health & Nutrition Platform
+    </div>
     """, unsafe_allow_html=True)
-    st.caption("🇳🇬 National Child Health Platform")
     st.divider()
 
     # 2. NAVIGATION TABS WITH ICONS
@@ -226,12 +236,11 @@ with st.sidebar:
     # 3. INTERACTIVE & DELETABLE RECENT CONVERSATIONS SECTION
     with st.expander("🕒 Recent Conversations", expanded=True):
         if st.session_state.recent_chats:
-            # Iterate over a copy to safely handle deletions
             for idx, chat_title in enumerate(list(st.session_state.recent_chats)):
                 c_load, c_del = st.columns([5, 1], gap="small")
                 with c_load:
                     if st.button(chat_title, key=f"load_chat_{idx}", use_container_width=True):
-                        st.toast(f"Loaded conversation: {chat_title}", icon="💬")
+                        st.toast(f"Loaded: {chat_title}", icon="💬")
                 with c_del:
                     if st.button("❌", key=f"del_chat_{idx}", use_container_width=True):
                         st.session_state.recent_chats.remove(chat_title)
@@ -277,11 +286,10 @@ st.divider()
 # PAGE 1: 🥗 NUTRITION & AI ASSISTANT
 # ============================================================
 if page == "🥗 Nutrition & AI Assistant":
-    st.markdown("## 🥗 Nutrition & Child Health AI Assistant")
     st.markdown("<p style='color: #4A6E6B; font-size: 15px;'>Your expert AI companion for infant & child nutrition, NPHCDA immunization timelines, and pediatric healthcare guidance.</p>", unsafe_allow_html=True)
 
     if not has_ai_credentials:
-        st.warning("⚠️ API credentials missing. Please verify `OPENAI_API_KEY` and `EMBEDDING_API_KEY` in `.env`.")
+        st.warning("⚠️ API credentials missing. Please verify `OPENAI_API_KEY` and `EMBEDDING_API_KEY` in `.env` or Streamlit Secrets.")
 
     # 1. RENDER CHAT HISTORY FEED
     for msg in st.session_state.messages:
