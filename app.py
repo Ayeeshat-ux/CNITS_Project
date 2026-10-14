@@ -149,7 +149,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "👋 Hello! I am your **PikinCare Nutrition & Child Health Assistant**. How can I help you and your child today with healthy meal plans, immunization schedules, or healthcare guidelines?"
+            "content": "👋 **Welcome to PikinCare!** I'm here to support you with your child's nutrition, growth, and health journey. How can I help you today?"
         }
     ]
 
@@ -206,14 +206,14 @@ def show_login_dialog():
 # SIDEBAR NAVIGATION
 # ============================================================
 with st.sidebar:
-    # 1. BRAND HEADER WITH CHILD ICON & CLEAN SUBTITLE
+    # 1. BRAND HEADER WITH CHILD ICON & NATURAL SUBTITLE
     st.markdown("""
     <div class="sidebar-brand">
         <span class="sidebar-brand-icon">👶</span>
         <span>PikinCare</span>
     </div>
     <div class="sidebar-subtitle">
-        National Child Health & Nutrition Platform
+        Your Trusted Partner in Child Wellness & Nutrition
     </div>
     """, unsafe_allow_html=True)
     st.divider()
