@@ -12,3 +12,4 @@ gTTS
 pandas
 pypdf
 reportlab
+scikit-learn
