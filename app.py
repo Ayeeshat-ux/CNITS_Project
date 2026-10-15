@@ -4,6 +4,7 @@ from datetime import date
 import os
 import tempfile
 import streamlit as st
+from langchain_core.messages import HumanMessage, AIMessage
 from src.speech_engine import speech_to_text, text_to_speech
 from src.rag_engine import get_agent_executor
 from src.vaccine_tracker import (
@@ -358,8 +359,17 @@ if page == "🥗 Nutrition & AI Assistant":
             if has_ai_credentials:
                 with st.spinner("🧠 Thinking..."):
                     config = {"configurable": {"thread_id": st.session_state.session_id}}
+                    
+                    # Safely build LangChain message objects to prevent type mismatch errors
+                    langchain_messages = []
+                    for msg in st.session_state.messages:
+                        if msg["role"] == "user":
+                            langchain_messages.append(HumanMessage(content=msg["content"]))
+                        else:
+                            langchain_messages.append(AIMessage(content=msg["content"]))
+                    
                     response = st.session_state.agent.invoke(
-                        {"messages": [("user", full_query)]},
+                        {"messages": langchain_messages},
                         config=config
                     )
                     reply = response["messages"][-1].content
