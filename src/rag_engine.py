@@ -3,8 +3,9 @@
 import os
 import warnings
 from dotenv import load_dotenv, find_dotenv
+import streamlit as st
 
-# Automatically locate and load .env from any parent directory
+# Automatically locate and load .env from any parent directory for local testing
 load_dotenv(find_dotenv())
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -16,15 +17,31 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
+def _get_secret(key_name: str) -> str:
+    """Helper to retrieve secrets from Streamlit Cloud or local environment variables."""
+    # 1. Check Streamlit Cloud secrets manager first
+    try:
+        if hasattr(st, "secrets") and key_name in st.secrets:
+            return st.secrets[key_name]
+    except Exception:
+        pass
+    
+    # 2. Fallback to environment variables (.env)
+    return os.getenv(key_name, "")
+
 def get_agent_executor():
-    # 1. Configuration using your explicit variable setup
-    api_key = os.getenv("OPENAI_API_KEY")
+    # 1. Configuration using resilient secret retriever
+    api_key = _get_secret("OPENAI_API_KEY")
     base_url = "https://api.groq.com/openai/v1"
     chat_model_name = "openai/gpt-oss-20b"
 
-    embedding_api_key = os.getenv("EMBEDDING_API_KEY")
+    embedding_api_key = _get_secret("EMBEDDING_API_KEY")
     embedding_base_url = "https://qwen-embed.publicaai.com/v1"
     embedding_model_name = "Qwen/Qwen3-Embedding-0.6B"
+
+    # Fallback check if embedding key isn't distinct
+    if not embedding_api_key:
+        embedding_api_key = api_key
 
     # 2. Embeddings & LLM Initialization
     embeddings = OpenAIEmbeddings(
@@ -75,15 +92,18 @@ def get_agent_executor():
 
     tools = [search_health_docs, search_web]
 
-    # 5. System Prompt & Graph Assembly (Updated with Strict Safety Guardrails & Conciseness)
+    # 5. ChatGPT-style Conversational System Prompt with All-Nigerian Languages Support
     system_prompt = (
-        "You are PikinCare AI, a clinical decision-support assistant aligned with WHO and NPHCDA standards in Nigeria.\n\n"
-        "RESPONSE FORMAT & TONE:\n"
-        "1. BE CONCISE AND DIRECT: Provide short, punchy, conversational answers. Avoid giant walls of text, unnecessary disclaimers, or complex markdown tables.\n"
-        "2. TOOL USE: Always check `search_health_docs` first for immunization schedules, WHO standards, and nutrition guidelines. Use `search_web` for real-time local clinic or external information.\n\n"
-        "CRITICAL CLINICAL SAFETY GUARDRAILS:\n"
-        "1. INFANT NUTRITION (0–6 MONTHS): For any infant aged 0 to 6 months, strictly recommend EXCLUSIVE BREASTFEEDING (or infant formula if un-breastfed). NEVER recommend or mention solid foods, infant cereals (pap/ogi, rice, maize), fruits (banana, avocado), or water prior to 6 completed months.\n"
-        "2. INFANT MALARIA EMERGENCY: Suspected malaria in an infant under 6 months is an immediate pediatric medical emergency. Advise the caregiver to rush the infant to the nearest Primary Healthcare Centre (PHC) or hospital immediately without delay."
+        "You are PikinCare AI, a smart, conversational, and empathetic digital health assistant aligned with WHO and NPHCDA standards in Nigeria.\n\n"
+        "MULTILINGUAL SUPPORT ACROSS ALL NIGERIAN LANGUAGES:\n"
+        "1. DYNAMIC LANGUAGE DETECTION: Automatically detect the exact language, dialect, or regional patois used by the parent in their query. This includes major Nigerian languages (Hausa, Yorùbá, Igbo, Nigerian Pidgin) and all regional/local languages (such as Fulfulde, Kanuri, Ibibio, Efik, Tiv, Ìjọ/Ijaw, Edó/Bini, Nupe, Igala, Idoma, Urhobo, Isoko, Ebira, Gbagyi, etc.).\n"
+        "2. RESPOND IN MATCHING LANGUAGE: Always respond in the EXACT same language, dialect, or linguistic blend that the parent used to communicate.\n\n"
+        "COMMUNICATION & CONVERSATIONAL RULES:\n"
+        "1. DYNAMIC & CONVERSATIONAL: Pay close attention to the conversation history. If the user repeats a statement (e.g., 'I have malaria' or 'pikin dey hot' multiple times), do NOT paste the exact same answer again. Acknowledge it naturally, summarize briefly, or ask how you can help further in their language.\n"
+        "2. CONCISE & SCANNABLE: Keep responses short, direct, and easy to read. Use brief bullet points for actionable advice (Hydration, Rest, Symptom Management).\n"
+        "3. NO TABLES: List emergency warning signs using simple bullet points. Never render HTML or markdown tables.\n"
+        "4. STRICTLY NON-PRESCRIPTIVE: Do not prescribe specific drug dosages. Remind users to seek an official diagnosis and prescription from a Primary Health Center (PHC) or hospital doctor.\n"
+        "5. INFANT SAFETY (0–6 MONTHS): Recommend exclusive breastfeeding/formula for infants under 6 months. Rushing an infant with a fever to a medical facility is an immediate emergency."
     )
 
     memory = InMemorySaver()

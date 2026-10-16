@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# MODERN UI/UX & STYLING
+# CLEAN CHATGPT / GEMINI UI & FIX POPOVER ALIGNMENT
 # ============================================================
 st.markdown("""
 <style>
@@ -70,18 +70,18 @@ st.markdown("""
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     color: #FFFFFF;
     margin-bottom: 2px;
 }
 .sidebar-brand-icon {
-    font-size: 32px;
+    font-size: 28px;
 }
 
 /* Sidebar Subtitle Styling */
 .sidebar-subtitle {
-    font-size: 13px;
+    font-size: 12px;
     color: #A3E6DF !important;
     font-weight: 500;
     margin-bottom: 12px;
@@ -97,8 +97,8 @@ st.markdown("""
     line-height: 1.4;
 }
 
-/* Gemini Chat Disclaimer Footer */
-.gemini-footer-disclaimer {
+/* Footer Disclaimer */
+.chatgpt-footer-disclaimer {
     text-align: center;
     font-size: 11px;
     color: #5C7A77;
@@ -114,37 +114,71 @@ st.markdown("""
     border-radius: 20px;
     padding: 6px 14px;
     font-weight: 600;
+    width: 100%;
 }
 .stButton > button:hover {
     background: #043A37;
     color: white !important;
 }
 
-/* Popover (+) button styling */
+/* FIX POPOVER (🎤) BUTTON IN-LINE */
+[data-testid="stPopover"] {
+    display: inline-block !important;
+}
 [data-testid="stPopover"] button {
     background: #E2ECE9 !important;
-    border: none !important;
+    border: 1px solid #A3E6DF !important;
     border-radius: 50% !important;
-    width: 40px !important;
-    height: 40px !important;
+    width: 38px !important;
+    height: 38px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
     color: #064E4A !important;
+    padding: 0 !important;
+    margin-top: 24px !important;
+}
+
+/* Recent chat history styling in sidebar */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    padding: 4px 8px !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Universal Cross-Device Responsive Queries */
+@media screen and (max-width: 768px) {
+    .block-container {
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+        padding-top: 1rem !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# SESSION STATE INITIALIZATION
+# PERSISTENT SESSION STATE INITIALIZATION
 # ============================================================
+query_params = st.query_params
+
 if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+    st.session_state.authenticated = query_params.get("logged_in", "false") == "true"
+
 if "user_name" not in st.session_state:
-    st.session_state.user_name = "Guest Parent"
+    st.session_state.user_name = query_params.get("user_name", "Guest Parent")
+
 if "session_id" not in st.session_state:
-    st.session_state.session_id = "pikincare_session_1"
+    st.session_state.session_id = f"pikincare_{st.session_state.user_name.lower().replace(' ', '_')}"
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -182,9 +216,14 @@ def show_login_dialog():
         password = st.text_input("🔒 Password", type="password", key="login_pass")
         if st.button("Sign In ➔", use_container_width=True, key="btn_login_submit"):
             if email:
-                st.session_state.user_name = email.split("@")[0].capitalize()
+                user_name = email.split("@")[0].capitalize()
+                st.session_state.user_name = user_name
                 st.session_state.authenticated = True
-                st.toast(f"Welcome back, {st.session_state.user_name}!", icon="🎉")
+                
+                st.query_params["logged_in"] = "true"
+                st.query_params["user_name"] = user_name
+                
+                st.toast(f"Welcome back, {user_name}!", icon="🎉")
                 st.rerun()
             else:
                 st.error("Please enter a valid email.")
@@ -197,6 +236,10 @@ def show_login_dialog():
             if full_name and signup_email:
                 st.session_state.user_name = full_name
                 st.session_state.authenticated = True
+                
+                st.query_params["logged_in"] = "true"
+                st.query_params["user_name"] = full_name
+                
                 st.toast("Account created successfully!", icon="✅")
                 st.rerun()
             else:
@@ -204,10 +247,9 @@ def show_login_dialog():
 
 
 # ============================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR NAVIGATION & GEMINI-STYLE CONTROLS
 # ============================================================
 with st.sidebar:
-    # 1. BRAND HEADER WITH CHILD ICON & NATURAL SUBTITLE
     st.markdown("""
     <div class="sidebar-brand">
         <span class="sidebar-brand-icon">👶</span>
@@ -217,9 +259,21 @@ with st.sidebar:
         Your Trusted Partner in Child Wellness & Nutrition
     </div>
     """, unsafe_allow_html=True)
+    
+    # ➕ NEW CHAT BUTTON
+    if st.button("➕ New Chat", use_container_width=True, key="btn_new_chat"):
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "👋 **Welcome to PikinCare!** I'm here to support you with your child's nutrition, growth, and health journey. How can I help you today?"
+            }
+        ]
+        if "pending_prompt" in st.session_state:
+            del st.session_state.pending_prompt
+        st.rerun()
+
     st.divider()
 
-    # 2. NAVIGATION TABS WITH ICONS
     page = st.radio(
         "Navigation",
         [
@@ -234,15 +288,16 @@ with st.sidebar:
 
     st.divider()
 
-    # 3. INTERACTIVE & DELETABLE RECENT CONVERSATIONS SECTION
     with st.expander("🕒 Recent Conversations", expanded=True):
         if st.session_state.recent_chats:
             for idx, chat_title in enumerate(list(st.session_state.recent_chats)):
-                c_load, c_del = st.columns([5, 1], gap="small")
-                with c_load:
+                col_load, col_del = st.columns([5, 1], gap="small")
+                with col_load:
                     if st.button(chat_title, key=f"load_chat_{idx}", use_container_width=True):
-                        st.toast(f"Loaded: {chat_title}", icon="💬")
-                with c_del:
+                        clean_query = chat_title.replace("👶 ", "").replace("💉 ", "").replace("🥗 ", "").replace("💬 ", "")
+                        st.session_state.pending_prompt = clean_query
+                        st.rerun()
+                with col_del:
                     if st.button("❌", key=f"del_chat_{idx}", use_container_width=True):
                         st.session_state.recent_chats.remove(chat_title)
                         st.rerun()
@@ -253,7 +308,6 @@ with st.sidebar:
         else:
             st.caption("No recent conversations.")
 
-    # 4. SIDEBAR DISCLAIMER FOOTER
     st.markdown("""
     <div class="sidebar-disclaimer">
         ⚠️ <b>Disclaimer:</b> Educational decision-support tool aligned with NPHCDA standards.
@@ -262,7 +316,7 @@ with st.sidebar:
 
 
 # ============================================================
-# TOP WEB APP HEADER (WITH STANDARD SIGN-IN BUTTON)
+# TOP WEB APP HEADER
 # ============================================================
 header_col1, header_col2 = st.columns([7, 3])
 
@@ -275,6 +329,7 @@ with header_col2:
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
             st.session_state.user_name = "Guest Parent"
+            st.query_params.clear()
             st.rerun()
     else:
         if st.button("🔑 Sign In / Sign Up", key="btn_signin_modal", use_container_width=True):
@@ -297,34 +352,38 @@ if page == "🥗 Nutrition & AI Assistant":
         with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
             st.markdown(msg["content"])
 
-    # 2. UNIFIED GEMINI-STYLE INPUT BAR
-    attached_file = None
+    # 2. IN-LINE EMBEDDED INPUT ROW (Speech Recognition Popover + Text Input inside form)
     audio_recording = None
+    user_typed_input = None
 
     with st.container():
-        with st.form(key="gemini_chat_form", clear_on_submit=True):
-            col_add, col_input, col_send = st.columns([1, 12, 2])
+        with st.form(key="embedded_chat_form", clear_on_submit=True):
+            col_mic, col_input, col_send = st.columns([1, 10, 1])
 
-            with col_add:
-                with st.popover("➕"):
-                    st.markdown("**Attach Media or Voice**")
-                    attached_file = st.file_uploader("Upload File/Image", type=["pdf", "txt", "csv", "png", "jpg"])
-                    audio_recording = st.audio_input("Record Voice")
+            with col_mic:
+                with st.popover("🎤", help="Record Voice Note"):
+                    st.markdown("**Voice Recognition**")
+                    audio_recording = st.audio_input("Record Voice Note", key="chat_audio_input")
 
             with col_input:
-                user_text_input = st.text_input(
-                    "Ask about child nutrition, meal plans, vaccines, or health...",
-                    placeholder="Ask a question about child nutrition, feeding, or vaccines...",
+                user_typed_input = st.text_input(
+                    "Message PikinCare AI...",
+                    placeholder="Message PikinCare AI...",
                     label_visibility="collapsed",
-                    key="gemini_prompt"
+                    key="embedded_prompt"
                 )
 
             with col_send:
-                submit_btn = st.form_submit_button("Send ➔", use_container_width=True)
+                submit_btn = st.form_submit_button("➔", use_container_width=True)
 
-    # Process Voice Input
+    # Handle Active Input Priority
     active_prompt = None
-    if audio_recording is not None:
+    if "pending_prompt" in st.session_state and st.session_state.pending_prompt:
+        active_prompt = st.session_state.pending_prompt
+        del st.session_state.pending_prompt
+    elif submit_btn and user_typed_input:
+        active_prompt = user_typed_input
+    elif audio_recording is not None:
         temp_path = None
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
@@ -338,20 +397,12 @@ if page == "🥗 Nutrition & AI Assistant":
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    # Process File Context
-    file_context = ""
-    if attached_file is not None:
-        file_context = f"\n[Attached File: {attached_file.name}]"
-        st.toast(f"Attached: {attached_file.name}", icon="📎")
-
-    user_prompt = user_text_input.strip() or active_prompt
-    if submit_btn and user_prompt:
-        full_query = user_prompt + file_context
+    if active_prompt:
+        full_query = active_prompt
         
         st.session_state.messages.append({"role": "user", "content": full_query})
         
-        # Add to recent chats tracker
-        recent_entry = "💬 " + user_prompt[:25] + ("..." if len(user_prompt) > 25 else "")
+        recent_entry = "💬 " + active_prompt[:25] + ("..." if len(active_prompt) > 25 else "")
         if recent_entry not in st.session_state.recent_chats:
             st.session_state.recent_chats.insert(0, recent_entry)
         
@@ -360,7 +411,6 @@ if page == "🥗 Nutrition & AI Assistant":
                 with st.spinner("🧠 Thinking..."):
                     config = {"configurable": {"thread_id": st.session_state.session_id}}
                     
-                    # Safely build LangChain message objects to prevent type mismatch errors
                     langchain_messages = []
                     for msg in st.session_state.messages:
                         if msg["role"] == "user":
@@ -379,19 +429,19 @@ if page == "🥗 Nutrition & AI Assistant":
                 st.error("API credentials not available.")
         st.rerun()
 
-    # 3. GEMINI DISCLAIMER FOOTER UNDER CHAT DOCK
+    # 3. CHATGPT-STYLE DISCLAIMER FOOTER
     st.markdown("""
-    <div class="gemini-footer-disclaimer">
+    <div class="chatgpt-footer-disclaimer">
         🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified doctor.
     </div>
     """, unsafe_allow_html=True)
 
 
 # ============================================================
-# PAGE 2: 💉 IMMUNIZATION TRACKER
+# PAGE 2: 💉 IMMUNIZATION TRACKER (INTERACTIVE DOSING)
 # ============================================================
 elif page == "💉 Immunization Tracker":
-    st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator. Check off vaccines your baby has already received.</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -403,7 +453,15 @@ elif page == "💉 Immunization Tracker":
         age_info = calculate_age(dob, as_of)
         st.info(f"👶 **Current Age:** {age_info['years']} yrs, {age_info['total_months'] % 12} mos ({age_info['total_weeks']} weeks)")
 
+        if "completed_vaccines" not in st.session_state:
+            st.session_state.completed_vaccines = []
+
         records = build_vaccine_schedule(dob, as_of=as_of)
+        
+        for r in records:
+            if r["vaccine"] in st.session_state.completed_vaccines:
+                r["status"] = "completed"
+
         grouped = group_vaccines_by_status(records)
 
         m1, m2, m3, m4 = st.columns(4)
@@ -413,12 +471,35 @@ elif page == "💉 Immunization Tracker":
         m4.metric("✅ Completed", len(grouped["completed"]))
 
         st.divider()
-        display_data = [{
-            "Vaccine": r["vaccine"], "Milestone": r["target_age_label"],
-            "Due Date": r["due_date_label"], "Status": r["status"], "Route": r["route"]
-        } for r in records]
+        st.markdown("### 📋 Vaccination Schedule & Record Check")
+        st.caption("Check the box next to any vaccine your baby has already received at the health clinic:")
+
+        updated_completed = list(st.session_state.completed_vaccines)
         
-        st.dataframe(display_data, use_container_width=True, hide_index=True)
+        for idx, r in enumerate(records):
+            is_checked = r["vaccine"] in updated_completed
+            cols = st.columns([1, 3, 2, 2, 2])
+            
+            with cols[0]:
+                checked = st.checkbox("Done", value=is_checked, key=f"vac_check_{idx}", label_visibility="collapsed")
+                if checked and r["vaccine"] not in updated_completed:
+                    updated_completed.append(r["vaccine"])
+                elif not checked and r["vaccine"] in updated_completed:
+                    updated_completed.remove(r["vaccine"])
+
+            with cols[1]:
+                st.markdown(f"**{r['vaccine']}**")
+            with cols[2]:
+                st.caption(f"Milestone: {r['target_age_label']}")
+            with cols[3]:
+                st.caption(f"Due: {r['due_date_label']}")
+            with cols[4]:
+                status_color = "🔴" if r['status'] == 'overdue' else ("🟢" if r['status'] == 'due_now' else ("🔵" if r['status'] == 'upcoming' else "✅"))
+                st.markdown(f"{status_color} *{r['status']}*")
+
+        if updated_completed != st.session_state.completed_vaccines:
+            st.session_state.completed_vaccines = updated_completed
+            st.rerun()
 
 
 # ============================================================
