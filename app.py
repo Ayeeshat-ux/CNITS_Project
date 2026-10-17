@@ -2,10 +2,14 @@
 
 from datetime import date
 import os
-import tempfile
+import time
 import streamlit as st
+from dotenv import load_dotenv
+
+# Automatically load environment variables from .env file
+load_dotenv()
+
 from langchain_core.messages import HumanMessage, AIMessage
-from src.speech_engine import speech_to_text, text_to_speech
 from src.rag_engine import get_agent_executor
 from src.vaccine_tracker import (
     build_vaccine_schedule,
@@ -32,7 +36,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CLEAN CHATGPT / GEMINI UI & FIX POPOVER ALIGNMENT
+# CLEAN CHATGPT / GEMINI UI & CUSTOM STYLING
 # ============================================================
 st.markdown("""
 <style>
@@ -41,6 +45,11 @@ st.markdown("""
     background: #F8FBFA;
     color: #102A2A;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* HIDE SIDEBAR COLLAPSE ARROW / TOGGLE */
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
 }
 
 /* Sidebar Gradient */
@@ -65,26 +74,13 @@ st.markdown("""
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Sidebar Brand Header */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 22px;
-    font-weight: 700;
-    color: #FFFFFF;
-    margin-bottom: 2px;
-}
-.sidebar-brand-icon {
-    font-size: 28px;
-}
-
-/* Sidebar Subtitle Styling */
+/* Sidebar Brand Subtitle Styling */
 .sidebar-subtitle {
     font-size: 12px;
     color: #A3E6DF !important;
     font-weight: 500;
     margin-bottom: 12px;
+    margin-top: -6px;
 }
 
 /* Sidebar Disclaimer */
@@ -119,25 +115,6 @@ st.markdown("""
 .stButton > button:hover {
     background: #043A37;
     color: white !important;
-}
-
-/* FIX POPOVER (🎤) BUTTON IN-LINE */
-[data-testid="stPopover"] {
-    display: inline-block !important;
-}
-[data-testid="stPopover"] button {
-    background: #E2ECE9 !important;
-    border: 1px solid #A3E6DF !important;
-    border-radius: 50% !important;
-    width: 38px !important;
-    height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 16px !important;
-    color: #064E4A !important;
-    padding: 0 !important;
-    margin-top: 24px !important;
 }
 
 /* Recent chat history styling in sidebar */
@@ -177,6 +154,12 @@ if "authenticated" not in st.session_state:
 if "user_name" not in st.session_state:
     st.session_state.user_name = query_params.get("user_name", "Guest Parent")
 
+if "user_email" not in st.session_state:
+    st.session_state.user_email = ""
+
+if "registered_users" not in st.session_state:
+    st.session_state.registered_users = {"parent@pikincare.ng": {"name": "Aishat Tiamiyu", "password": "password123"}}
+
 if "session_id" not in st.session_state:
     st.session_state.session_id = f"pikincare_{st.session_state.user_name.lower().replace(' ', '_')}"
 
@@ -196,65 +179,100 @@ if "recent_chats" not in st.session_state:
         "🥗 Balanced nutrition for children & toddlers"
     ]
 
-# Initialize Agent
-has_ai_credentials = all(os.getenv(key) for key in ("OPENAI_API_KEY", "EMBEDDING_API_KEY"))
+# Flexible API Credentials Check
+groq_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
+has_ai_credentials = bool(groq_key)
+
 if has_ai_credentials and "agent" not in st.session_state:
-    st.session_state.agent = get_agent_executor()
+    try:
+        st.session_state.agent = get_agent_executor()
+    except Exception as e:
+        st.error(f"Error initializing AI Agent: {e}")
 
 
 # ============================================================
-# SIGN IN / AUTHENTICATION MODAL DIALOG
+# REALISTIC AUTHENTICATION MODAL DIALOG
 # ============================================================
-@st.dialog("🔐 Sign In to PikinCare")
+@st.dialog("🔐 Account Access")
 def show_login_dialog():
-    st.markdown("Access personalized growth tracking and saved child health records.")
+    st.caption("Sign in or create an account to save your child's health records & growth tracking.")
     
     tab_login, tab_signup = st.tabs(["🔑 Sign In", "📝 Create Account"])
     
     with tab_login:
-        email = st.text_input("📧 Email Address", key="login_email")
-        password = st.text_input("🔒 Password", type="password", key="login_pass")
-        if st.button("Sign In ➔", use_container_width=True, key="btn_login_submit"):
-            if email:
-                user_name = email.split("@")[0].capitalize()
-                st.session_state.user_name = user_name
-                st.session_state.authenticated = True
-                
-                st.query_params["logged_in"] = "true"
-                st.query_params["user_name"] = user_name
-                
-                st.toast(f"Welcome back, {user_name}!", icon="🎉")
-                st.rerun()
-            else:
-                st.error("Please enter a valid email.")
+        with st.form(key="form_login"):
+            email_in = st.text_input("📧 Email Address", placeholder="e.g. parent@example.com", key="login_email").strip().lower()
+            pass_in = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="login_pass")
+            submit_login = st.form_submit_button("Sign In ➔", use_container_width=True)
+            
+            if submit_login:
+                if not email_in or "@" not in email_in:
+                    st.error("Please enter a valid email address.")
+                elif not pass_in:
+                    st.error("Please enter your password.")
+                else:
+                    if email_in in st.session_state.registered_users:
+                        user_info = st.session_state.registered_users[email_in]
+                        if user_info["password"] == pass_in:
+                            st.session_state.user_name = user_info["name"]
+                            st.session_state.user_email = email_in
+                            st.session_state.authenticated = True
+                            st.query_params["logged_in"] = "true"
+                            st.query_params["user_name"] = user_info["name"]
+                            st.toast(f"Welcome back, {user_info['name']}!", icon="🎉")
+                            st.rerun()
+                        else:
+                            st.error("Incorrect password. Please try again.")
+                    else:
+                        display_name = email_in.split("@")[0].capitalize()
+                        st.session_state.registered_users[email_in] = {"name": display_name, "password": pass_in}
+                        st.session_state.user_name = display_name
+                        st.session_state.user_email = email_in
+                        st.session_state.authenticated = True
+                        st.query_params["logged_in"] = "true"
+                        st.query_params["user_name"] = display_name
+                        st.toast(f"Welcome, {display_name}!", icon="🎉")
+                        st.rerun()
 
     with tab_signup:
-        full_name = st.text_input("👤 Full Name", key="signup_name")
-        signup_email = st.text_input("📧 Email Address", key="signup_email")
-        signup_pass = st.text_input("🔒 Password", type="password", key="signup_pass")
-        if st.button("Create Account ✨", use_container_width=True, key="btn_signup_submit"):
-            if full_name and signup_email:
-                st.session_state.user_name = full_name
-                st.session_state.authenticated = True
-                
-                st.query_params["logged_in"] = "true"
-                st.query_params["user_name"] = full_name
-                
-                st.toast("Account created successfully!", icon="✅")
-                st.rerun()
-            else:
-                st.error("Please fill in all details.")
+        with st.form(key="form_signup"):
+            full_name = st.text_input("👤 Full Name", placeholder="e.g. Aishat Tiamiyu", key="signup_name").strip()
+            signup_email = st.text_input("📧 Email Address", placeholder="e.g. parent@example.com", key="signup_email").strip().lower()
+            signup_pass = st.text_input("🔒 Password", type="password", placeholder="Create a password (min. 6 chars)", key="signup_pass")
+            submit_signup = st.form_submit_button("Create Account ✨", use_container_width=True)
+            
+            if submit_signup:
+                if not full_name:
+                    st.error("Please enter your full name.")
+                elif not signup_email or "@" not in signup_email:
+                    st.error("Please enter a valid email address.")
+                elif len(signup_pass) < 6:
+                    st.error("Password must be at least 6 characters long.")
+                else:
+                    st.session_state.registered_users[signup_email] = {"name": full_name, "password": signup_pass}
+                    st.session_state.user_name = full_name
+                    st.session_state.user_email = signup_email
+                    st.session_state.authenticated = True
+                    st.query_params["logged_in"] = "true"
+                    st.query_params["user_name"] = full_name
+                    st.toast("Account created successfully!", icon="✅")
+                    st.rerun()
 
 
 # ============================================================
 # SIDEBAR NAVIGATION & GEMINI-STYLE CONTROLS
 # ============================================================
 with st.sidebar:
+    col_brand_img, col_brand_txt = st.columns([1, 4], vertical_alignment="center")
+    with col_brand_img:
+        if os.path.exists("sidebar_mother_child_illustration.png"):
+            st.image("sidebar_mother_child_illustration.png", width=38)
+        else:
+            st.markdown("👶")
+    with col_brand_txt:
+        st.markdown("<h2 style='color: white; margin: 0; padding: 0; font-weight: 700;'>PikinCare</h2>", unsafe_allow_html=True)
+
     st.markdown("""
-    <div class="sidebar-brand">
-        <span class="sidebar-brand-icon">👶</span>
-        <span>PikinCare</span>
-    </div>
     <div class="sidebar-subtitle">
         Your Trusted Partner in Child Wellness & Nutrition
     </div>
@@ -298,7 +316,7 @@ with st.sidebar:
                         st.session_state.pending_prompt = clean_query
                         st.rerun()
                 with col_del:
-                    if st.button("❌", key=f"del_chat_{idx}", use_container_width=True):
+                    if st.button("✖", key=f"del_chat_{idx}", use_container_width=True):
                         st.session_state.recent_chats.remove(chat_title)
                         st.rerun()
             
@@ -329,6 +347,7 @@ with header_col2:
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
             st.session_state.user_name = "Guest Parent"
+            st.session_state.user_email = ""
             st.query_params.clear()
             st.rerun()
     else:
@@ -345,58 +364,52 @@ if page == "🥗 Nutrition & AI Assistant":
     st.markdown("<p style='color: #4A6E6B; font-size: 15px;'>Your expert AI companion for infant & child nutrition, NPHCDA immunization timelines, and pediatric healthcare guidance.</p>", unsafe_allow_html=True)
 
     if not has_ai_credentials:
-        st.warning("⚠️ API credentials missing. Please verify `OPENAI_API_KEY` and `EMBEDDING_API_KEY` in `.env` or Streamlit Secrets.")
+        st.warning("⚠️ API credentials missing. Please verify `GROQ_API_KEY` in your `.env` file.")
+
+    # Determine assistant avatar safely based on file existence
+    assistant_avatar = "hero_baby_illustration.png" if os.path.exists("hero_baby_illustration.png") else "👶"
 
     # 1. RENDER CHAT HISTORY FEED
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
+        avatar = assistant_avatar if msg["role"] == "assistant" else "🧑‍🍼"
+        with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
 
-    # 2. IN-LINE EMBEDDED INPUT ROW (Speech Recognition Popover + Text Input inside form)
-    audio_recording = None
-    user_typed_input = None
-
-    with st.container():
-        with st.form(key="embedded_chat_form", clear_on_submit=True):
-            col_mic, col_input, col_send = st.columns([1, 10, 1])
-
-            with col_mic:
-                with st.popover("🎤", help="Record Voice Note"):
-                    st.markdown("**Voice Recognition**")
-                    audio_recording = st.audio_input("Record Voice Note", key="chat_audio_input")
-
-            with col_input:
-                user_typed_input = st.text_input(
-                    "Message PikinCare AI...",
-                    placeholder="Message PikinCare AI...",
-                    label_visibility="collapsed",
-                    key="embedded_prompt"
-                )
-
-            with col_send:
-                submit_btn = st.form_submit_button("➔", use_container_width=True)
-
-    # Handle Active Input Priority
+    # 2. CHAT INPUT WITH NATIVE AUDIO RECORDING & WHISPER TRANSCRIPTION
     active_prompt = None
+
     if "pending_prompt" in st.session_state and st.session_state.pending_prompt:
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
-    elif submit_btn and user_typed_input:
-        active_prompt = user_typed_input
-    elif audio_recording is not None:
-        temp_path = None
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                f.write(audio_recording.getvalue())
-                temp_path = f.name
-            with st.spinner("🎙️ Transcribing voice note..."):
-                active_prompt = speech_to_text(temp_path)
-        except Exception as e:
-            st.error(f"Voice error: {e}")
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
 
+    user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
+
+    if user_input_obj:
+        if isinstance(user_input_obj, dict):
+            if user_input_obj.get("text"):
+                active_prompt = user_input_obj["text"]
+            elif user_input_obj.get("audio"):
+                audio_file = user_input_obj["audio"]
+                try:
+                    with st.spinner("Transcribing your voice message..."):
+                        from openai import OpenAI
+                        client = OpenAI(
+                            api_key=os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY"),
+                            base_url="https://api.groq.com/openai/v1" if os.getenv("GROQ_API_KEY") else None
+                        )
+                        transcript = client.audio.transcriptions.create(
+                            model="whisper-large-v3-turbo" if os.getenv("GROQ_API_KEY") else "whisper-1",
+                            file=("audio.wav", audio_file.read(), "audio/wav")
+                        )
+                        active_prompt = transcript.text
+                        st.toast(f"Heard: {active_prompt}", icon="🎙️")
+                except Exception as e:
+                    active_prompt = "Hello PikinCare, I need assistance with my child's health and nutrition."
+                    st.warning(f"Voice transcription fallback used: {e}")
+        elif isinstance(user_input_obj, str):
+            active_prompt = user_input_obj
+
+    # 3. PROCESS ACTIVE PROMPT & GET AI RESPONSE WITH STREAMING
     if active_prompt:
         full_query = active_prompt
         
@@ -406,30 +419,35 @@ if page == "🥗 Nutrition & AI Assistant":
         if recent_entry not in st.session_state.recent_chats:
             st.session_state.recent_chats.insert(0, recent_entry)
         
-        with st.chat_message("assistant", avatar="🤖"):
-            if has_ai_credentials:
-                with st.spinner("🧠 Thinking..."):
-                    config = {"configurable": {"thread_id": st.session_state.session_id}}
-                    
-                    langchain_messages = []
-                    for msg in st.session_state.messages:
-                        if msg["role"] == "user":
-                            langchain_messages.append(HumanMessage(content=msg["content"]))
-                        else:
-                            langchain_messages.append(AIMessage(content=msg["content"]))
-                    
+        with st.chat_message("assistant", avatar=assistant_avatar):
+            if has_ai_credentials and "agent" in st.session_state:
+                config = {"configurable": {"thread_id": st.session_state.session_id}}
+                
+                langchain_messages = []
+                for msg in st.session_state.messages[:-1]:
+                    if msg["role"] == "user":
+                        langchain_messages.append(HumanMessage(content=msg["content"]))
+                    else:
+                        langchain_messages.append(AIMessage(content=msg["content"]))
+                langchain_messages.append(HumanMessage(content=full_query))
+
+                def response_generator():
                     response = st.session_state.agent.invoke(
                         {"messages": langchain_messages},
                         config=config
                     )
-                    reply = response["messages"][-1].content
-                    st.markdown(reply)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
+                    full_reply = response["messages"][-1].content
+                    for word in full_reply.split(" "):
+                        yield word + " "
+                        time.sleep(0.02)
+
+                reply = st.write_stream(response_generator())
+                st.session_state.messages.append({"role": "assistant", "content": reply})
             else:
-                st.error("API credentials not available.")
+                st.error("Groq API credentials not available.")
         st.rerun()
 
-    # 3. CHATGPT-STYLE DISCLAIMER FOOTER
+    # 4. CHATGPT-STYLE DISCLAIMER FOOTER
     st.markdown("""
     <div class="chatgpt-footer-disclaimer">
         🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified doctor.
