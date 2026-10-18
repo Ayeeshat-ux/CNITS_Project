@@ -132,6 +132,15 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
+/* Fix chat input text visibility for clear reading */
+[data-testid="stChatInput"] textarea {
+    color: #FFFFFF !important;
+    background-color: #023330 !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #A3E6DF !important;
+}
+
 /* Universal Cross-Device Responsive Queries */
 @media screen and (max-width: 768px) {
     .block-container {
@@ -179,8 +188,17 @@ if "recent_chats" not in st.session_state:
         "🥗 Balanced nutrition for children & toddlers"
     ]
 
-# Flexible API Credentials Check
-groq_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
+# Flexible API Credentials Check (supports Streamlit Cloud Secrets)
+try:
+    groq_key = (
+        st.secrets.get("GROQ_API_KEY") 
+        or st.secrets.get("OPENAI_API_KEY") 
+        or os.getenv("GROQ_API_KEY") 
+        or os.getenv("OPENAI_API_KEY")
+    )
+except Exception:
+    groq_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
+
 has_ai_credentials = bool(groq_key)
 
 if has_ai_credentials and "agent" not in st.session_state:
@@ -364,90 +382,88 @@ if page == "🥗 Nutrition & AI Assistant":
     st.markdown("<p style='color: #4A6E6B; font-size: 15px;'>Your expert AI companion for infant & child nutrition, NPHCDA immunization timelines, and pediatric healthcare guidance.</p>", unsafe_allow_html=True)
 
     if not has_ai_credentials:
-        st.warning("⚠️ API credentials missing. Please verify `GROQ_API_KEY` in your `.env` file.")
+        st.warning("⚠️ API credentials missing. Please verify `GROQ_API_KEY` in your Streamlit Secrets.")
 
-    # Determine assistant avatar safely based on file existence
     assistant_avatar = "hero_baby_illustration.png" if os.path.exists("hero_baby_illustration.png") else "👶"
 
-    # 1. RENDER CHAT HISTORY FEED
-    for msg in st.session_state.messages:
-        avatar = assistant_avatar if msg["role"] == "assistant" else "🧑‍🍼"
-        with st.chat_message(msg["role"], avatar=avatar):
-            st.markdown(msg["content"])
-
-    # 2. CHAT INPUT WITH NATIVE AUDIO RECORDING & WHISPER TRANSCRIPTION
+    # 1. HANDLE PENDING PROMPT FROM SIDEBAR HISTORY CLICKS
     active_prompt = None
-
     if "pending_prompt" in st.session_state and st.session_state.pending_prompt:
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
 
+    # 2. CAPTURE CHAT INPUT (TEXT OR AUDIO) CORRECTLY VIA DATACLASS ATTRIBUTES
     user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
 
     if user_input_obj:
-        if isinstance(user_input_obj, dict):
-            if user_input_obj.get("text"):
-                active_prompt = user_input_obj["text"]
-            elif user_input_obj.get("audio"):
-                audio_file = user_input_obj["audio"]
-                try:
-                    with st.spinner("Transcribing your voice message..."):
-                        from openai import OpenAI
-                        client = OpenAI(
-                            api_key=os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY"),
-                            base_url="https://api.groq.com/openai/v1" if os.getenv("GROQ_API_KEY") else None
-                        )
-                        transcript = client.audio.transcriptions.create(
-                            model="whisper-large-v3-turbo" if os.getenv("GROQ_API_KEY") else "whisper-1",
-                            file=("audio.wav", audio_file.read(), "audio/wav")
-                        )
-                        active_prompt = transcript.text
-                        st.toast(f"Heard: {active_prompt}", icon="🎙️")
-                except Exception as e:
-                    active_prompt = "Hello PikinCare, I need assistance with my child's health and nutrition."
-                    st.warning(f"Voice transcription fallback used: {e}")
-        elif isinstance(user_input_obj, str):
-            active_prompt = user_input_obj
+        input_text = getattr(user_input_obj, "text", "")
+        input_audio = getattr(user_input_obj, "audio", None)
 
-    # 3. PROCESS ACTIVE PROMPT & GET AI RESPONSE WITH STREAMING
+        if input_text:
+            active_prompt = input_text
+        elif input_audio:
+            try:
+                with st.spinner("Transcribing your voice message..."):
+                    from openai import OpenAI
+                    client = OpenAI(
+                        api_key=groq_key,
+                        base_url="https://api.groq.com/openai/v1" if groq_key and "gsk_" in groq_key else None
+                    )
+                    audio_bytes = input_audio.read()
+                    mime_type = getattr(input_audio, "type", "audio/webm")
+                    ext = "webm" if "webm" in mime_type or "ogg" in mime_type else "wav"
+
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-large-v3-turbo" if groq_key and "gsk_" in groq_key else "whisper-1",
+                        file=(f"audio.{ext}", audio_bytes, mime_type)
+                    )
+                    active_prompt = transcript.text
+                    st.toast(f"Heard: {active_prompt}", icon="🎙️")
+            except Exception as e:
+                active_prompt = "What can I feed my baby for nutrition?"
+                st.warning(f"Voice transcription note: {e}")
+
+    # 3. IF THERE IS AN ACTIVE PROMPT, PROCESS IT & APPEND TO MESSAGES BEFORE RENDERING
     if active_prompt:
-        full_query = active_prompt
-        
-        st.session_state.messages.append({"role": "user", "content": full_query})
+        st.session_state.messages.append({"role": "user", "content": active_prompt})
         
         recent_entry = "💬 " + active_prompt[:25] + ("..." if len(active_prompt) > 25 else "")
         if recent_entry not in st.session_state.recent_chats:
             st.session_state.recent_chats.insert(0, recent_entry)
         
-        with st.chat_message("assistant", avatar=assistant_avatar):
-            if has_ai_credentials and "agent" in st.session_state:
-                config = {"configurable": {"thread_id": st.session_state.session_id}}
-                
-                langchain_messages = []
-                for msg in st.session_state.messages[:-1]:
-                    if msg["role"] == "user":
-                        langchain_messages.append(HumanMessage(content=msg["content"]))
-                    else:
-                        langchain_messages.append(AIMessage(content=msg["content"]))
-                langchain_messages.append(HumanMessage(content=full_query))
+        if has_ai_credentials and "agent" in st.session_state:
+            config = {"configurable": {"thread_id": st.session_state.session_id}}
+            
+            langchain_messages = []
+            for msg in st.session_state.messages[:-1]:
+                if msg["role"] == "user":
+                    langchain_messages.append(HumanMessage(content=msg["content"]))
+                else:
+                    langchain_messages.append(AIMessage(content=msg["content"]))
+            langchain_messages.append(HumanMessage(content=active_prompt))
 
-                def response_generator():
-                    response = st.session_state.agent.invoke(
-                        {"messages": langchain_messages},
-                        config=config
-                    )
-                    full_reply = response["messages"][-1].content
-                    for word in full_reply.split(" "):
-                        yield word + " "
-                        time.sleep(0.02)
-
-                reply = st.write_stream(response_generator())
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-            else:
-                st.error("Groq API credentials not available.")
+            try:
+                response = st.session_state.agent.invoke(
+                    {"messages": langchain_messages},
+                    config=config
+                )
+                reply = response["messages"][-1].content
+            except Exception as e:
+                reply = f"I encountered an error connecting to the AI agent: {e}"
+            
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+        else:
+            st.session_state.messages.append({"role": "assistant", "content": "Groq API credentials not available."})
+        
         st.rerun()
 
-    # 4. CHATGPT-STYLE DISCLAIMER FOOTER
+    # 4. RENDER CHAT HISTORY FEED
+    for msg in st.session_state.messages:
+        avatar = assistant_avatar if msg["role"] == "assistant" else "🧑‍🍼"
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
+
+    # 5. CHATGPT-STYLE DISCLAIMER FOOTER
     st.markdown("""
     <div class="chatgpt-footer-disclaimer">
         🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified doctor.
