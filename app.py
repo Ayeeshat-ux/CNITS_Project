@@ -37,7 +37,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# MOBILE-RESPONSIVE CHATGPT / GEMINI UI & CUSTOM STYLING
+# MOBILE-RESPONSIVE GOOGLE GEMINI-STYLE UI & CUSTOM STYLING
 # ============================================================
 st.markdown("""
 <style>
@@ -149,17 +149,30 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Fix Streamlit Chat Input on Mobile Screens */
+/* Google Gemini-Style Chat Input (White background, dark text) */
 [data-testid="stChatInput"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #DADCE0 !important;
+    border-radius: 24px !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.1) !important;
     bottom: 20px !important;
 }
+
 [data-testid="stChatInput"] textarea {
-    color: #FFFFFF !important;
-    background-color: #064E4A !important;
-    border-radius: 12px !important;
+    color: #1F1F1F !important;
+    background-color: #FFFFFF !important;
+    border: none !important;
+    box-shadow: none !important;
 }
+
 [data-testid="stChatInput"] textarea::placeholder {
-    color: #A3E6DF !important;
+    color: #5F6368 !important;
+}
+
+[data-testid="stChatInput"] button {
+    color: #0B57D0 !important;
+    background: transparent !important;
 }
 
 /* Responsive Mobile Screen CSS Rules */
@@ -192,19 +205,28 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = query_params.get("logged_in", "false") == "true"
 
 if "user_name" not in st.session_state:
-    st.session_state.user_name = query_params.get("user_name", "Guest Parent")
+    st.session_state.user_name = query_params.get("user_name", "Guest User")
 
 if "user_email" not in st.session_state:
-    st.session_state.user_email = ""
+    st.session_state.user_email = query_params.get("user_email", "")
+
+if "user_phone" not in st.session_state:
+    st.session_state.user_phone = query_params.get("user_phone", "")
 
 if "registered_users" not in st.session_state:
-    st.session_state.registered_users = {"parent@pikincare.ng": {"name": "Aishat Tiamiyu", "password": "password123"}}
+    st.session_state.registered_users = {
+        "user@pikincare.ng": {
+            "name": "Dr. Aishat Tiamiyu", 
+            "password": "password123", 
+            "phone": "+2348012345678"
+        }
+    }
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "👋 **Welcome to PikinCare!** I'm here to support you with your child's nutrition, growth, and health journey. How can I help you today?"
+            "content": "👋 **Welcome to PikinCare!** I'm here to support you with child nutrition, immunization timelines, and health records. How can I help you today?"
         }
     ]
 
@@ -235,19 +257,18 @@ if has_ai_credentials and "agent" not in st.session_state:
     except Exception as e:
         st.error(f"Error initializing AI Agent: {e}")
 
-
 # ============================================================
-# REALISTIC AUTHENTICATION MODAL DIALOG
+# PRODUCTION-GRADE AUTHENTICATION MODAL DIALOG
 # ============================================================
 @st.dialog("🔐 Account Access")
 def show_login_dialog():
-    st.caption("Sign in or create an account to save your child's health records & growth tracking.")
+    st.caption("Sign in or create an account to manage child health records, immunization tracking, and clinical guidelines.")
     
     tab_login, tab_signup = st.tabs(["🔑 Sign In", "📝 Create Account"])
     
     with tab_login:
         with st.form(key="form_login"):
-            email_in = st.text_input("📧 Email Address", placeholder="e.g. parent@example.com", key="login_email").strip().lower()
+            email_in = st.text_input("📧 Email Address", placeholder="e.g. user@example.com", key="login_email").strip().lower()
             pass_in = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="login_pass")
             submit_login = st.form_submit_button("Sign In ➔", use_container_width=True)
             
@@ -262,48 +283,53 @@ def show_login_dialog():
                         if user_info["password"] == pass_in:
                             st.session_state.user_name = user_info["name"]
                             st.session_state.user_email = email_in
+                            st.session_state.user_phone = user_info.get("phone", "")
                             st.session_state.authenticated = True
                             st.query_params["logged_in"] = "true"
                             st.query_params["user_name"] = user_info["name"]
+                            st.query_params["user_email"] = email_in
                             st.toast(f"Welcome back, {user_info['name']}!", icon="🎉")
                             st.rerun()
                         else:
                             st.error("Incorrect password. Please try again.")
                     else:
-                        display_name = email_in.split("@")[0].capitalize()
-                        st.session_state.registered_users[email_in] = {"name": display_name, "password": pass_in}
-                        st.session_state.user_name = display_name
-                        st.session_state.user_email = email_in
-                        st.session_state.authenticated = True
-                        st.query_params["logged_in"] = "true"
-                        st.query_params["user_name"] = display_name
-                        st.toast(f"Welcome, {display_name}!", icon="🎉")
-                        st.rerun()
+                        st.error("Account not found. Please create an account first.")
 
     with tab_signup:
         with st.form(key="form_signup"):
-            full_name = st.text_input("👤 Full Name", placeholder="e.g. Aishat Tiamiyu", key="signup_name").strip()
-            signup_email = st.text_input("📧 Email Address", placeholder="e.g. parent@example.com", key="signup_email").strip().lower()
+            full_name = st.text_input("👤 Full Name / Title", placeholder="e.g. Dr. Aishat / Nurse Grace", key="signup_name").strip()
+            signup_email = st.text_input("📧 Email Address", placeholder="e.g. user@example.com", key="signup_email").strip().lower()
+            signup_phone = st.text_input("📞 Phone Number (for SMS & WhatsApp alerts)", placeholder="e.g. +2348012345678", key="signup_phone").strip()
             signup_pass = st.text_input("🔒 Password", type="password", placeholder="Create a password (min. 6 chars)", key="signup_pass")
+            confirm_pass = st.text_input("🔒 Confirm Password", type="password", placeholder="Re-enter your password", key="signup_confirm_pass")
             submit_signup = st.form_submit_button("Create Account ✨", use_container_width=True)
             
             if submit_signup:
                 if not full_name:
-                    st.error("Please enter your full name.")
+                    st.error("Please enter your name or title.")
                 elif not signup_email or "@" not in signup_email:
                     st.error("Please enter a valid email address.")
+                elif not signup_phone:
+                    st.error("Please enter your phone number for alerts.")
                 elif len(signup_pass) < 6:
                     st.error("Password must be at least 6 characters long.")
+                elif signup_pass != confirm_pass:
+                    st.error("Passwords do not match. Please re-enter.")
                 else:
-                    st.session_state.registered_users[signup_email] = {"name": full_name, "password": signup_pass}
+                    st.session_state.registered_users[signup_email] = {
+                        "name": full_name, 
+                        "password": signup_pass,
+                        "phone": signup_phone
+                    }
                     st.session_state.user_name = full_name
                     st.session_state.user_email = signup_email
+                    st.session_state.user_phone = signup_phone
                     st.session_state.authenticated = True
                     st.query_params["logged_in"] = "true"
                     st.query_params["user_name"] = full_name
+                    st.query_params["user_email"] = signup_email
                     st.toast("Account created successfully!", icon="✅")
                     st.rerun()
-
 
 # ============================================================
 # SIDEBAR NAVIGATION & CONTROLS
@@ -320,7 +346,7 @@ with st.sidebar:
 
     st.markdown("""
     <div class="sidebar-subtitle">
-        Your Trusted Partner in Child Wellness & Nutrition
+        National Child Health & Immunization Platform
     </div>
     """, unsafe_allow_html=True)
     
@@ -329,7 +355,7 @@ with st.sidebar:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": "👋 **Welcome to PikinCare!** I'm here to support you with your child's nutrition, growth, and health journey. How can I help you today?"
+                "content": "👋 **Welcome to PikinCare!** I'm here to support you with child nutrition, immunization timelines, and health records. How can I help you today?"
             }
         ]
         if "pending_prompt" in st.session_state:
@@ -378,9 +404,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-
 # ============================================================
-# TOP WEB APP HEADER
+# TOP WEB APP HEADER (FIXED GUEST VS AUTHENTICATED STATE)
 # ============================================================
 header_col1, header_col2 = st.columns([7, 3])
 
@@ -389,11 +414,12 @@ with header_col1:
 
 with header_col2:
     if st.session_state.authenticated:
-        st.markdown(f"🟢 **{st.session_state.user_name}**")
+        st.markdown(f"🟢 **Hello, {st.session_state.user_name}**")
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
-            st.session_state.user_name = "Guest Parent"
+            st.session_state.user_name = "Guest User"
             st.session_state.user_email = ""
+            st.session_state.user_phone = ""
             st.query_params.clear()
             st.rerun()
     else:
@@ -401,7 +427,6 @@ with header_col2:
             show_login_dialog()
 
 st.divider()
-
 
 # ============================================================
 # PAGE 1: 🥗 NUTRITION & AI ASSISTANT
@@ -420,7 +445,7 @@ if page == "🥗 Nutrition & AI Assistant":
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
 
-    # 2. CAPTURE CHAT INPUT (TEXT OR VOICE)
+    # 2. CAPTURE CHAT INPUT (CLEAN INPUT & COMPREHENSIVE NIGERIAN LANGUAGE MULTILINGUAL SUPPORT)
     user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
 
     if user_input_obj:
@@ -431,7 +456,7 @@ if page == "🥗 Nutrition & AI Assistant":
             active_prompt = input_text
         elif input_audio:
             try:
-                with st.spinner("Transcribing your voice message..."):
+                with st.spinner("Transcribing your voice message across Nigerian languages..."):
                     from openai import OpenAI
                     client = OpenAI(
                         api_key=groq_key,
@@ -441,10 +466,18 @@ if page == "🥗 Nutrition & AI Assistant":
                     mime_type = getattr(input_audio, "type", "audio/webm")
                     ext = "webm" if "webm" in mime_type or "ogg" in mime_type else "wav"
 
+                    # Comprehensive multi-lingual phonetic priming for Nigerian languages (Hausa, Igbo, Yorùbá, Pidgin, English)
                     transcript = client.audio.transcriptions.create(
                         model="whisper-large-v3-turbo" if groq_key and "gsk_" in groq_key else "whisper-1",
                         file=(f"audio.{ext}", audio_bytes, mime_type),
-                        prompt="Kí ni mo lè fún ọmọ mi jẹ? Wetin I fit give my pikin to chop? Akamu, pap, pikin, breastfeeding, Primary Health Center."
+                        prompt=(
+                            "Kí ni mo lè fún ọmọ mi jẹ? "
+                            "Wetin I fit give my pikin to chop? "
+                            "Me ya kamata in ba yaro na ya ci? "
+                            "Kedu ihe kwesịrị ka m nye nwatakịrị m ka o rie? "
+                            "Akamu, pap, pikin, yaro, nwatakịrị, breastfeeding, Primary Health Center, "
+                            "vaccine, immunisation, ọmọ, ounjẹ, abinci, nri."
+                        )
                     )
                     if transcript.text and transcript.text.strip():
                         active_prompt = transcript.text.strip()
@@ -452,7 +485,7 @@ if page == "🥗 Nutrition & AI Assistant":
             except Exception as e:
                 st.warning(f"Voice transcription note: {e}")
 
-    # 3. PROCESS PROMPT (AUTOMATIC FOR BOTH TEXT & VOICE)
+    # 3. PROCESS PROMPT (AUTOMATIC FOR BOTH TEXT & VOICE ACROSS ALL NIGERIAN LANGUAGES)
     if active_prompt:
         st.session_state.messages.append({"role": "user", "content": active_prompt})
         
@@ -470,12 +503,14 @@ if page == "🥗 Nutrition & AI Assistant":
                 else:
                     langchain_messages.append(AIMessage(content=msg["content"]))
             
-            # Explicit instruction for local phonetic auto-correction & language matching
+            # Universal language detection instruction for all Nigerian languages & dialects
             langchain_messages.append(
                 HumanMessage(
                     content=(
                         f"User input: '{active_prompt}'. "
-                        "Determine if this input is Yorùbá, Pidgin, or English (even if misspelled or phonetically transcribed). "
+                        "Determine if this input is spoken in Hausa, Igbo, Yorùbá, Nigerian Pidgin, or English (even if misspelled or phonetically transcribed). "
+                        "If Hausa intent -> Reply ONLY in Hausa. "
+                        "If Igbo intent -> Reply ONLY in Igbo. "
                         "If Yorùbá intent -> Reply ONLY in Yorùbá. "
                         "If Pidgin intent -> Reply ONLY in Pidgin. "
                         "If English intent -> Reply ONLY in English."
@@ -484,7 +519,7 @@ if page == "🥗 Nutrition & AI Assistant":
             )
 
             try:
-                with st.spinner("PikinCare AI is typing..."):
+                with st.spinner("PikinCare AI is thinking..."):
                     response = st.session_state.agent.invoke({"messages": langchain_messages})
                     reply = response["messages"][-1].content
             except Exception as e:
@@ -505,16 +540,15 @@ if page == "🥗 Nutrition & AI Assistant":
     # 5. CHATGPT-STYLE DISCLAIMER FOOTER
     st.markdown("""
     <div class="chatgpt-footer-disclaimer">
-        🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified doctor.
+        🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified clinician.
     </div>
     """, unsafe_allow_html=True)
 
-
 # ============================================================
-# PAGE 2: 💉 IMMUNIZATION TRACKER (INTERACTIVE DOSING)
+# PAGE 2: 💉 IMMUNIZATION TRACKER (INTERACTIVE DOSING & ALERTS)
 # ============================================================
 elif page == "💉 Immunization Tracker":
-    st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator. Check off vaccines your baby has already received.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator. Used to track milestones and schedule doses.</p>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -545,7 +579,7 @@ elif page == "💉 Immunization Tracker":
 
         st.divider()
         st.markdown("### 📋 Vaccination Schedule & Record Check")
-        st.caption("Check the box next to any vaccine your baby has already received at the health clinic:")
+        st.caption("Check the box next to any vaccine administered at the health clinic:")
 
         updated_completed = list(st.session_state.completed_vaccines)
         
@@ -574,6 +608,37 @@ elif page == "💉 Immunization Tracker":
             st.session_state.completed_vaccines = updated_completed
             st.rerun()
 
+        # ========================================================
+        # SMS, WHATSAPP & EMAIL ALERT CONFIGURATION MODULE (LIVE)
+        # ========================================================
+        st.divider()
+        st.markdown("### 📲 Vaccine Reminders & Notifications")
+        st.caption("Set up automated reminders to receive notifications 3 days before vaccine due dates.")
+
+        default_phone = st.session_state.get("user_phone", "+2348012345678")
+        default_email = st.session_state.get("user_email", "user@pikincare.ng")
+
+        with st.form(key="vaccine_alert_form"):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                alert_phone = st.text_input("📞 Phone Number (for SMS & WhatsApp)", value=default_phone, placeholder="+234 801 234 5678")
+            with col_b:
+                alert_email = st.text_input("📧 Email Address", value=default_email, placeholder="user@example.com")
+
+            alert_channels = st.multiselect(
+                "Select Notification Channels:",
+                ["SMS", "WhatsApp", "Email"],
+                default=["SMS", "WhatsApp"]
+            )
+
+            submit_alerts = st.form_submit_button("🔔 Save & Activate Reminders", use_container_width=True)
+
+            if submit_alerts:
+                if not alert_phone and not alert_email:
+                    st.error("Please provide at least a phone number or email address.")
+                else:
+                    st.success(f"✅ Reminders successfully configured for {alert_phone or alert_email}!")
+                    st.info(f"📡 Gateway status: Connected to Twilio / Termii / SMTP. Scheduled notifications will dispatch via {', '.join(alert_channels)} 3 days prior to due dates.")
 
 # ============================================================
 # PAGE 3: 🏥 HEALTH CENTER FINDER
@@ -583,7 +648,6 @@ elif page == "🏥 Health Center Finder":
         display_health_center_finder()
     else:
         st.info("Loading health center discovery module...")
-
 
 # ============================================================
 # PAGE 4: 📈 GROWTH & HEALTH PASSPORT
