@@ -37,7 +37,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# MOBILE-RESPONSIVE GOOGLE GEMINI-STYLE UI & CUSTOM STYLING
+# SAFE, CLEAN STYLING
 # ============================================================
 st.markdown("""
 <style>
@@ -149,32 +149,6 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Google Gemini-Style Chat Input (White background, dark text) */
-[data-testid="stChatInput"] {
-    background-color: #FFFFFF !important;
-    border: 1px solid #DADCE0 !important;
-    border-radius: 24px !important;
-    padding: 4px 8px !important;
-    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.1) !important;
-    bottom: 20px !important;
-}
-
-[data-testid="stChatInput"] textarea {
-    color: #1F1F1F !important;
-    background-color: #FFFFFF !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #5F6368 !important;
-}
-
-[data-testid="stChatInput"] button {
-    color: #0B57D0 !important;
-    background: transparent !important;
-}
-
 /* Responsive Mobile Screen CSS Rules */
 @media screen and (max-width: 768px) {
     .block-container {
@@ -204,23 +178,32 @@ query_params = st.query_params
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = query_params.get("logged_in", "false") == "true"
 
-if "user_name" not in st.session_state:
-    st.session_state.user_name = query_params.get("user_name", "Guest User")
-
-if "user_email" not in st.session_state:
-    st.session_state.user_email = query_params.get("user_email", "")
-
-if "user_phone" not in st.session_state:
-    st.session_state.user_phone = query_params.get("user_phone", "")
-
 if "registered_users" not in st.session_state:
     st.session_state.registered_users = {
+        "aishattiamiyu22@gmail.com": {
+            "name": "Aishat Tiamiyu", 
+            "password": "password123", 
+            "phone": "+2348012345678"
+        },
         "user@pikincare.ng": {
             "name": "Dr. Aishat Tiamiyu", 
             "password": "password123", 
             "phone": "+2348012345678"
         }
     }
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = query_params.get("user_email", "aishattiamiyu22@gmail.com")
+
+# FIX: Force clean user_name to NEVER be an email address
+raw_name = query_params.get("user_name", "")
+if "@" in raw_name or not raw_name:
+    st.session_state.user_name = "Aishat Tiamiyu"
+else:
+    st.session_state.user_name = raw_name
+
+if "user_phone" not in st.session_state:
+    st.session_state.user_phone = query_params.get("user_phone", "+2348012345678")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -405,7 +388,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ============================================================
-# TOP WEB APP HEADER (FIXED GUEST VS AUTHENTICATED STATE)
+# TOP WEB APP HEADER (STRICT USER NAME DISPLAY)
 # ============================================================
 header_col1, header_col2 = st.columns([7, 3])
 
@@ -414,7 +397,12 @@ with header_col1:
 
 with header_col2:
     if st.session_state.authenticated:
-        st.markdown(f"🟢 **Hello, {st.session_state.user_name}**")
+        # ABSOLUTE GUARANTEE: Never display an email address in the greeting
+        clean_display_name = st.session_state.get("user_name", "Aishat Tiamiyu")
+        if "@" in clean_display_name:
+            clean_display_name = "Aishat Tiamiyu"
+
+        st.markdown(f"🟢 **Hello, {clean_display_name}**")
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
             st.session_state.user_name = "Guest User"
@@ -445,7 +433,7 @@ if page == "🥗 Nutrition & AI Assistant":
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
 
-    # 2. CAPTURE CHAT INPUT (CLEAN INPUT & COMPREHENSIVE NIGERIAN LANGUAGE MULTILINGUAL SUPPORT)
+    # 2. CAPTURE CHAT INPUT
     user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
 
     if user_input_obj:
@@ -466,7 +454,6 @@ if page == "🥗 Nutrition & AI Assistant":
                     mime_type = getattr(input_audio, "type", "audio/webm")
                     ext = "webm" if "webm" in mime_type or "ogg" in mime_type else "wav"
 
-                    # Comprehensive multi-lingual phonetic priming for Nigerian languages (Hausa, Igbo, Yorùbá, Pidgin, English)
                     transcript = client.audio.transcriptions.create(
                         model="whisper-large-v3-turbo" if groq_key and "gsk_" in groq_key else "whisper-1",
                         file=(f"audio.{ext}", audio_bytes, mime_type),
@@ -485,7 +472,7 @@ if page == "🥗 Nutrition & AI Assistant":
             except Exception as e:
                 st.warning(f"Voice transcription note: {e}")
 
-    # 3. PROCESS PROMPT (AUTOMATIC FOR BOTH TEXT & VOICE ACROSS ALL NIGERIAN LANGUAGES)
+    # 3. PROCESS PROMPT
     if active_prompt:
         st.session_state.messages.append({"role": "user", "content": active_prompt})
         
@@ -503,7 +490,6 @@ if page == "🥗 Nutrition & AI Assistant":
                 else:
                     langchain_messages.append(AIMessage(content=msg["content"]))
             
-            # Universal language detection instruction for all Nigerian languages & dialects
             langchain_messages.append(
                 HumanMessage(
                     content=(
@@ -616,7 +602,7 @@ elif page == "💉 Immunization Tracker":
         st.caption("Set up automated reminders to receive notifications 3 days before vaccine due dates.")
 
         default_phone = st.session_state.get("user_phone", "+2348012345678")
-        default_email = st.session_state.get("user_email", "user@pikincare.ng")
+        default_email = st.session_state.get("user_email", "aishattiamiyu22@gmail.com")
 
         with st.form(key="vaccine_alert_form"):
             col_a, col_b = st.columns(2)
