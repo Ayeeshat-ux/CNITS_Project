@@ -3,6 +3,7 @@
 from datetime import date
 import os
 import time
+import uuid
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -36,23 +37,29 @@ st.set_page_config(
 )
 
 # ============================================================
-# CLEAN CHATGPT / GEMINI UI & CUSTOM STYLING
+# MOBILE-RESPONSIVE CHATGPT / GEMINI UI & CUSTOM STYLING
 # ============================================================
 st.markdown("""
 <style>
-/* Main App Surface */
+/* Main Surface & Container Adjustments */
 .stApp {
     background: #F8FBFA;
     color: #102A2A;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* HIDE SIDEBAR COLLAPSE ARROW / TOGGLE */
+/* Reduce top padding so page header isn't cropped on mobile */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 5rem !important;
+}
+
+/* Hide Sidebar Toggle / Collapse Button for persistent clean navigation */
 [data-testid="stSidebarCollapseButton"] {
     display: none !important;
 }
 
-/* Sidebar Gradient */
+/* Sidebar Styling */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #023330 0%, #064E4A 100%);
     border-right: 1px solid #085D57;
@@ -67,12 +74,6 @@ st.markdown("""
 [data-testid="stSidebar"] span {
     color: #FFFFFF !important;
 }
-[data-testid="stSidebar"] summary {
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    color: #FFFFFF !important;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
 
 /* Sidebar Brand Subtitle Styling */
 .sidebar-subtitle {
@@ -81,6 +82,22 @@ st.markdown("""
     font-weight: 500;
     margin-bottom: 12px;
     margin-top: -6px;
+}
+
+/* Fix Streamlit Expander background to match dark sidebar */
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    background-color: transparent !important;
+    color: #FFFFFF !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] details {
+    background-color: transparent !important;
 }
 
 /* Sidebar Disclaimer */
@@ -132,21 +149,35 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Fix chat input text visibility for clear reading */
+/* Fix Streamlit Chat Input on Mobile Screens */
+[data-testid="stChatInput"] {
+    bottom: 20px !important;
+}
 [data-testid="stChatInput"] textarea {
     color: #FFFFFF !important;
-    background-color: #023330 !important;
+    background-color: #064E4A !important;
+    border-radius: 12px !important;
 }
 [data-testid="stChatInput"] textarea::placeholder {
     color: #A3E6DF !important;
 }
 
-/* Universal Cross-Device Responsive Queries */
+/* Responsive Mobile Screen CSS Rules */
 @media screen and (max-width: 768px) {
     .block-container {
-        padding-left: 0.8rem !important;
-        padding-right: 0.8rem !important;
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
         padding-top: 1rem !important;
+    }
+    
+    h3 {
+        font-size: 1.25rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .stButton > button {
+        font-size: 13px !important;
+        padding: 8px 10px !important;
     }
 }
 </style>
@@ -169,9 +200,6 @@ if "user_email" not in st.session_state:
 if "registered_users" not in st.session_state:
     st.session_state.registered_users = {"parent@pikincare.ng": {"name": "Aishat Tiamiyu", "password": "password123"}}
 
-if "session_id" not in st.session_state:
-    st.session_state.session_id = f"pikincare_{st.session_state.user_name.lower().replace(' ', '_')}"
-
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -188,7 +216,7 @@ if "recent_chats" not in st.session_state:
         "🥗 Balanced nutrition for children & toddlers"
     ]
 
-# Flexible API Credentials Check (supports Streamlit Cloud Secrets)
+# Flexible API Credentials Check
 try:
     groq_key = (
         st.secrets.get("GROQ_API_KEY") 
@@ -278,7 +306,7 @@ def show_login_dialog():
 
 
 # ============================================================
-# SIDEBAR NAVIGATION & GEMINI-STYLE CONTROLS
+# SIDEBAR NAVIGATION & CONTROLS
 # ============================================================
 with st.sidebar:
     col_brand_img, col_brand_txt = st.columns([1, 4], vertical_alignment="center")
@@ -392,7 +420,7 @@ if page == "🥗 Nutrition & AI Assistant":
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
 
-    # 2. CAPTURE CHAT INPUT (TEXT OR AUDIO) CORRECTLY VIA DATACLASS ATTRIBUTES
+    # 2. CAPTURE CHAT INPUT (TEXT OR VOICE)
     user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
 
     if user_input_obj:
@@ -415,15 +443,16 @@ if page == "🥗 Nutrition & AI Assistant":
 
                     transcript = client.audio.transcriptions.create(
                         model="whisper-large-v3-turbo" if groq_key and "gsk_" in groq_key else "whisper-1",
-                        file=(f"audio.{ext}", audio_bytes, mime_type)
+                        file=(f"audio.{ext}", audio_bytes, mime_type),
+                        prompt="Kí ni mo lè fún ọmọ mi jẹ? Wetin I fit give my pikin to chop? Akamu, pap, pikin, breastfeeding, Primary Health Center."
                     )
-                    active_prompt = transcript.text
-                    st.toast(f"Heard: {active_prompt}", icon="🎙️")
+                    if transcript.text and transcript.text.strip():
+                        active_prompt = transcript.text.strip()
+                        st.toast(f"🎙️ Heard: {active_prompt}", icon="🗣️")
             except Exception as e:
-                active_prompt = "What can I feed my baby for nutrition?"
                 st.warning(f"Voice transcription note: {e}")
 
-    # 3. IF THERE IS AN ACTIVE PROMPT, PROCESS IT & APPEND TO MESSAGES BEFORE RENDERING
+    # 3. PROCESS PROMPT (AUTOMATIC FOR BOTH TEXT & VOICE)
     if active_prompt:
         st.session_state.messages.append({"role": "user", "content": active_prompt})
         
@@ -432,22 +461,32 @@ if page == "🥗 Nutrition & AI Assistant":
             st.session_state.recent_chats.insert(0, recent_entry)
         
         if has_ai_credentials and "agent" in st.session_state:
-            config = {"configurable": {"thread_id": st.session_state.session_id}}
-            
+            recent_history = st.session_state.messages[-3:]
             langchain_messages = []
-            for msg in st.session_state.messages[:-1]:
+            
+            for msg in recent_history[:-1]:
                 if msg["role"] == "user":
                     langchain_messages.append(HumanMessage(content=msg["content"]))
                 else:
                     langchain_messages.append(AIMessage(content=msg["content"]))
-            langchain_messages.append(HumanMessage(content=active_prompt))
+            
+            # Explicit instruction for local phonetic auto-correction & language matching
+            langchain_messages.append(
+                HumanMessage(
+                    content=(
+                        f"User input: '{active_prompt}'. "
+                        "Determine if this input is Yorùbá, Pidgin, or English (even if misspelled or phonetically transcribed). "
+                        "If Yorùbá intent -> Reply ONLY in Yorùbá. "
+                        "If Pidgin intent -> Reply ONLY in Pidgin. "
+                        "If English intent -> Reply ONLY in English."
+                    )
+                )
+            )
 
             try:
-                response = st.session_state.agent.invoke(
-                    {"messages": langchain_messages},
-                    config=config
-                )
-                reply = response["messages"][-1].content
+                with st.spinner("PikinCare AI is typing..."):
+                    response = st.session_state.agent.invoke({"messages": langchain_messages})
+                    reply = response["messages"][-1].content
             except Exception as e:
                 reply = f"I encountered an error connecting to the AI agent: {e}"
             
