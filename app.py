@@ -37,7 +37,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# SAFE, CLEAN STYLING
+# PERFECT LIGHT MODE & MOBILE RESPONSIVE GEMINI-STYLE STYLING
 # ============================================================
 st.markdown("""
 <style>
@@ -48,10 +48,10 @@ st.markdown("""
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Reduce top padding so page header isn't cropped on mobile */
+/* Container padding for desktop */
 .main .block-container {
-    padding-top: 2rem !important;
-    padding-bottom: 5rem !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 6rem !important;
 }
 
 /* Hide Sidebar Toggle / Collapse Button for persistent clean navigation */
@@ -149,17 +149,40 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Responsive Mobile Screen CSS Rules */
+/* --- BULLETPROOF CHAT INPUT STYLING (FORCES WHITE BG & DARK TEXT) --- */
+[data-testid="stChatInput"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #DADCE0 !important;
+    border-radius: 24px !important;
+    padding: 4px 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] div[data-baseweb="base-input"],
+[data-testid="stChatInput"] input {
+    color: #111111 !important;
+    background-color: #FFFFFF !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #555555 !important;
+    -webkit-text-fill-color: #555555 !important;
+}
+
+/* Responsive Mobile Screen Fixes (Prevents header clipping & white overlays) */
 @media screen and (max-width: 768px) {
     .block-container {
-        padding-left: 0.6rem !important;
-        padding-right: 0.6rem !important;
-        padding-top: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        padding-top: 0.8rem !important;
     }
     
     h3 {
-        font-size: 1.25rem !important;
-        margin-top: 0.5rem !important;
+        font-size: 1.15rem !important;
+        margin-top: 0.4rem !important;
+        padding-top: 0.4rem !important;
     }
     
     .stButton > button {
@@ -195,12 +218,8 @@ if "registered_users" not in st.session_state:
 if "user_email" not in st.session_state:
     st.session_state.user_email = query_params.get("user_email", "aishattiamiyu22@gmail.com")
 
-# FIX: Force clean user_name to NEVER be an email address
-raw_name = query_params.get("user_name", "")
-if "@" in raw_name or not raw_name:
+if "user_name" not in st.session_state:
     st.session_state.user_name = "Aishat Tiamiyu"
-else:
-    st.session_state.user_name = raw_name
 
 if "user_phone" not in st.session_state:
     st.session_state.user_phone = query_params.get("user_phone", "+2348012345678")
@@ -388,7 +407,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ============================================================
-# TOP WEB APP HEADER (STRICT USER NAME DISPLAY)
+# TOP WEB APP HEADER (STRICT NAME GREETING)
 # ============================================================
 header_col1, header_col2 = st.columns([7, 3])
 
@@ -397,15 +416,14 @@ with header_col1:
 
 with header_col2:
     if st.session_state.authenticated:
-        # ABSOLUTE GUARANTEE: Never display an email address in the greeting
-        clean_display_name = st.session_state.get("user_name", "Aishat Tiamiyu")
-        if "@" in clean_display_name:
-            clean_display_name = "Aishat Tiamiyu"
+        display_name = st.session_state.get("user_name", "Aishat Tiamiyu")
+        if "@" in display_name:
+            display_name = "Aishat Tiamiyu"
 
-        st.markdown(f"🟢 **Hello, {clean_display_name}**")
+        st.markdown(f"🟢 **Hello, {display_name}**")
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
-            st.session_state.user_name = "Guest User"
+            st.session_state.user_name = "Aishat Tiamiyu"
             st.session_state.user_email = ""
             st.session_state.user_phone = ""
             st.query_params.clear()
@@ -523,7 +541,7 @@ if page == "🥗 Nutrition & AI Assistant":
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
 
-    # 5. CHATGPT-STYLE DISCLAIMER FOOTER
+    # 5. DISCLAIMER FOOTER
     st.markdown("""
     <div class="chatgpt-footer-disclaimer">
         🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified clinician.
