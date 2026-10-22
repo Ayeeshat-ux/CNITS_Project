@@ -41,10 +41,10 @@ st.set_page_config(
 # ============================================================
 st.markdown("""
 <style>
-/* Main Surface & Container Adjustments */
-.stApp {
-    background: #F8FBFA;
-    color: #102A2A;
+/* Main Surface & Container Adjustments - Force Light Mode */
+html, body, [data-testid="stAppViewContainer"], .stApp {
+    background: #F8FBFA !important;
+    color: #102A2A !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -164,12 +164,24 @@ st.markdown("""
     color: #111111 !important;
     background-color: #FFFFFF !important;
     -webkit-text-fill-color: #111111 !important;
+    font-size: 16px !important;
 }
 
 [data-testid="stChatInput"] textarea::placeholder {
     color: #555555 !important;
     -webkit-text-fill-color: #555555 !important;
 }
+
+/* Dialog / Account Access Modal mobile fix */
+div[role="dialog"] {
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+}
+
+/* Hide default Streamlit header and footer badges */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 
 /* Responsive Mobile Screen Fixes (Prevents header clipping & white overlays) */
 @media screen and (max-width: 768px) {
@@ -209,7 +221,7 @@ if "registered_users" not in st.session_state:
             "phone": "+2348012345678"
         },
         "user@pikincare.ng": {
-            "name": "Dr. Aishat Tiamiyu", 
+            "name": "Aishat Tiamiyu", 
             "password": "password123", 
             "phone": "+2348012345678"
         }
@@ -299,7 +311,7 @@ def show_login_dialog():
 
     with tab_signup:
         with st.form(key="form_signup"):
-            full_name = st.text_input("👤 Full Name / Title", placeholder="e.g. Dr. Aishat / Nurse Grace", key="signup_name").strip()
+            full_name = st.text_input("👤 Full Name", placeholder="e.g. Aishat Tiamiyu", key="signup_name").strip()
             signup_email = st.text_input("📧 Email Address", placeholder="e.g. user@example.com", key="signup_email").strip().lower()
             signup_phone = st.text_input("📞 Phone Number (for SMS & WhatsApp alerts)", placeholder="e.g. +2348012345678", key="signup_phone").strip()
             signup_pass = st.text_input("🔒 Password", type="password", placeholder="Create a password (min. 6 chars)", key="signup_pass")
@@ -308,7 +320,7 @@ def show_login_dialog():
             
             if submit_signup:
                 if not full_name:
-                    st.error("Please enter your name or title.")
+                    st.error("Please enter your full name.")
                 elif not signup_email or "@" not in signup_email:
                     st.error("Please enter a valid email address.")
                 elif not signup_phone:
