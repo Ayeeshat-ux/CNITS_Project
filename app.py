@@ -33,24 +33,30 @@ st.set_page_config(
     page_title="PikinCare | National Child Health Platform",
     page_icon="👶",
     layout="wide",
-    initial_sidebar_state="auto"  # FIXED: Allows mobile users to toggle sidebar properly
+    initial_sidebar_state="auto"
 )
 
 # ============================================================
-# PERFECT LIGHT MODE & MOBILE RESPONSIVE GEMINI-STYLE STYLING
+# PERFECT LIGHT MODE & MOBILE RESPONSIVE STYLING
 # ============================================================
 st.markdown("""
 <style>
-/* Main Surface & Container Adjustments - Force Light Mode */
+/* Force Light Mode Surface Across Devices */
 html, body, [data-testid="stAppViewContainer"], .stApp {
     background: #F8FBFA !important;
     color: #102A2A !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Container padding for desktop */
+/* Ensure top header and sidebar toggle remain visible on mobile */
+header[data-testid="stHeader"] {
+    background-color: transparent !important;
+    z-index: 99999 !important;
+}
+
+/* Container padding for mobile & desktop */
 .main .block-container {
-    padding-top: 1.5rem !important;
+    padding-top: 2rem !important;
     padding-bottom: 6rem !important;
 }
 
@@ -79,17 +85,20 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     margin-top: -6px;
 }
 
-/* --- CLEAN SIDEBAR NAVIGATION PILLS (HIDES RADIO CIRCLES) --- */
+/* --- BULLETPROOF CLEAN SIDEBAR NAVIGATION PILLS --- */
 [data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] {
-    gap: 6px !important;
+    gap: 8px !important;
 }
 
 [data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label {
     background-color: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 10px !important;
-    padding: 8px 12px !important;
-    margin: 2px 0 !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
     transition: all 0.2s ease-in-out;
 }
 
@@ -98,16 +107,16 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* Hide the default radio input circle */
-[data-testid="stSidebar"] div[data-testid="stRadio"] input[type="radio"] {
+/* Completely hide the default radio circle/dot container */
+[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] label div:first-child {
     display: none !important;
 }
 
-/* Ensure navigation text is crisp white */
 [data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label p {
     color: #FFFFFF !important;
     font-weight: 500 !important;
     font-size: 14px !important;
+    margin: 0 !important;
 }
 
 /* Fix Streamlit Expander background to match dark sidebar */
@@ -175,7 +184,7 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* --- BULLETPROOF CHAT INPUT STYLING (FORCES WHITE BG & DARK TEXT) --- */
+/* --- BULLETPROOF CHAT INPUT STYLING --- */
 [data-testid="stChatInput"] {
     background-color: #FFFFFF !important;
     border: 1px solid #DADCE0 !important;
@@ -198,41 +207,33 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     -webkit-text-fill-color: #555555 !important;
 }
 
-/* Dialog / Account Access Modal mobile fix */
+/* Dialog / Modal height fix for mobile */
 div[role="dialog"] {
     max-height: 85vh !important;
     overflow-y: auto !important;
 }
 
-/* Hide default Streamlit header and footer badges */
-#MainMenu {visibility: hidden;}
+/* Hide default footer watermark only */
 footer {visibility: hidden;}
-header {visibility: hidden;}
 
-/* Responsive Mobile Screen Fixes (Prevents header clipping & white overlays) */
+/* Mobile Screen Layout Optimization */
 @media screen and (max-width: 768px) {
     .block-container {
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        padding-top: 0.8rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+        padding-top: 2.5rem !important;
     }
     
     h3 {
         font-size: 1.15rem !important;
         margin-top: 0.4rem !important;
-        padding-top: 0.4rem !important;
-    }
-    
-    .stButton > button {
-        font-size: 13px !important;
-        padding: 8px 10px !important;
     }
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# PERSISTENT SESSION STATE INITIALIZATION
+# DYNAMIC SESSION STATE INITIALIZATION (NO HARDCODED NAMES)
 # ============================================================
 query_params = st.query_params
 
@@ -240,27 +241,16 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = query_params.get("logged_in", "false") == "true"
 
 if "registered_users" not in st.session_state:
-    st.session_state.registered_users = {
-        "aishattiamiyu22@gmail.com": {
-            "name": "Aishat Tiamiyu", 
-            "password": "password123", 
-            "phone": "+2348012345678"
-        },
-        "user@pikincare.ng": {
-            "name": "Aishat Tiamiyu", 
-            "password": "password123", 
-            "phone": "+2348012345678"
-        }
-    }
+    st.session_state.registered_users = {}
 
 if "user_email" not in st.session_state:
-    st.session_state.user_email = query_params.get("user_email", "aishattiamiyu22@gmail.com")
+    st.session_state.user_email = query_params.get("user_email", "")
 
 if "user_name" not in st.session_state:
-    st.session_state.user_name = "Aishat Tiamiyu"
+    st.session_state.user_name = query_params.get("user_name", "")
 
 if "user_phone" not in st.session_state:
-    st.session_state.user_phone = query_params.get("user_phone", "+2348012345678")
+    st.session_state.user_phone = query_params.get("user_phone", "")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -270,7 +260,6 @@ if "messages" not in st.session_state:
         }
     ]
 
-# Recent Chat History Tracking
 if "recent_chats" not in st.session_state:
     st.session_state.recent_chats = [
         "👶 Child malaria care guidelines",
@@ -337,7 +326,7 @@ def show_login_dialog():
 
     with tab_signup:
         with st.form(key="form_signup"):
-            full_name = st.text_input("👤 Full Name", placeholder="e.g. Aishat Tiamiyu", key="signup_name").strip()
+            full_name = st.text_input("👤 Full Name", placeholder="", key="signup_name").strip()
             signup_email = st.text_input("📧 Email Address", placeholder="e.g. user@example.com", key="signup_email").strip().lower()
             signup_phone = st.text_input("📞 Phone Number (for SMS & WhatsApp alerts)", placeholder="e.g. +2348012345678", key="signup_phone").strip()
             signup_pass = st.text_input("🔒 Password", type="password", placeholder="Create a password (min. 6 chars)", key="signup_pass")
@@ -390,7 +379,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
-    # ➕ NEW CHAT BUTTON
     if st.button("➕ New Chat", use_container_width=True, key="btn_new_chat"):
         st.session_state.messages = [
             {
@@ -445,7 +433,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ============================================================
-# TOP WEB APP HEADER (STRICT NAME GREETING)
+# TOP WEB APP HEADER (DYNAMIC USER GREETING)
 # ============================================================
 header_col1, header_col2 = st.columns([7, 3])
 
@@ -453,15 +441,13 @@ with header_col1:
     st.markdown(f"### {page}")
 
 with header_col2:
-    if st.session_state.authenticated:
-        display_name = st.session_state.get("user_name", "Aishat Tiamiyu")
-        if "@" in display_name:
-            display_name = "Aishat Tiamiyu"
+    if st.session_state.authenticated and st.session_state.get("user_name"):
+        display_name = st.session_state.user_name
 
         st.markdown(f"🟢 **Hello, {display_name}**")
         if st.button("🚪 Sign Out", key="btn_signout", use_container_width=True):
             st.session_state.authenticated = False
-            st.session_state.user_name = "Aishat Tiamiyu"
+            st.session_state.user_name = ""
             st.session_state.user_email = ""
             st.session_state.user_phone = ""
             st.query_params.clear()
@@ -483,13 +469,11 @@ if page == "🥗 Nutrition & AI Assistant":
 
     assistant_avatar = "hero_baby_illustration.png" if os.path.exists("hero_baby_illustration.png") else "👶"
 
-    # 1. HANDLE PENDING PROMPT FROM SIDEBAR HISTORY CLICKS
     active_prompt = None
     if "pending_prompt" in st.session_state and st.session_state.pending_prompt:
         active_prompt = st.session_state.pending_prompt
         del st.session_state.pending_prompt
 
-    # 2. CAPTURE CHAT INPUT
     user_input_obj = st.chat_input("Message PikinCare AI...", accept_audio=True)
 
     if user_input_obj:
@@ -528,7 +512,6 @@ if page == "🥗 Nutrition & AI Assistant":
             except Exception as e:
                 st.warning(f"Voice transcription note: {e}")
 
-    # 3. PROCESS PROMPT
     if active_prompt:
         st.session_state.messages.append({"role": "user", "content": active_prompt})
         
@@ -573,13 +556,11 @@ if page == "🥗 Nutrition & AI Assistant":
         
         st.rerun()
 
-    # 4. RENDER CHAT HISTORY FEED
     for msg in st.session_state.messages:
         avatar = assistant_avatar if msg["role"] == "assistant" else "🧑‍🍼"
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
 
-    # 5. DISCLAIMER FOOTER
     st.markdown("""
     <div class="chatgpt-footer-disclaimer">
         🛡️ PikinCare AI provides decision support aligned with WHO & NPHCDA standards. Check important medical decisions with a qualified clinician.
@@ -587,7 +568,7 @@ if page == "🥗 Nutrition & AI Assistant":
     """, unsafe_allow_html=True)
 
 # ============================================================
-# PAGE 2: 💉 IMMUNIZATION TRACKER (INTERACTIVE DOSING & ALERTS)
+# PAGE 2: 💉 IMMUNIZATION TRACKER
 # ============================================================
 elif page == "💉 Immunization Tracker":
     st.markdown("<p style='color: #4A6E6B;'>Official NPHCDA routine childhood vaccination timeline calculator. Used to track milestones and schedule doses.</p>", unsafe_allow_html=True)
@@ -650,15 +631,12 @@ elif page == "💉 Immunization Tracker":
             st.session_state.completed_vaccines = updated_completed
             st.rerun()
 
-        # ========================================================
-        # SMS, WHATSAPP & EMAIL ALERT CONFIGURATION MODULE (LIVE)
-        # ========================================================
         st.divider()
         st.markdown("### 📲 Vaccine Reminders & Notifications")
         st.caption("Set up automated reminders to receive notifications 3 days before vaccine due dates.")
 
-        default_phone = st.session_state.get("user_phone", "+2348012345678")
-        default_email = st.session_state.get("user_email", "aishattiamiyu22@gmail.com")
+        default_phone = st.session_state.get("user_phone", "")
+        default_email = st.session_state.get("user_email", "")
 
         with st.form(key="vaccine_alert_form"):
             col_a, col_b = st.columns(2)
