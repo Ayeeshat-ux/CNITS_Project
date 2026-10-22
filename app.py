@@ -33,7 +33,7 @@ st.set_page_config(
     page_title="PikinCare | National Child Health Platform",
     page_icon="👶",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"  # FIXED: Allows mobile users to toggle sidebar properly
 )
 
 # ============================================================
@@ -52,11 +52,6 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
 .main .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 6rem !important;
-}
-
-/* Hide Sidebar Toggle / Collapse Button for persistent clean navigation */
-[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
 }
 
 /* Sidebar Styling */
@@ -82,6 +77,37 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
     font-weight: 500;
     margin-bottom: 12px;
     margin-top: -6px;
+}
+
+/* --- CLEAN SIDEBAR NAVIGATION PILLS (HIDES RADIO CIRCLES) --- */
+[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] {
+    gap: 6px !important;
+}
+
+[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    margin: 2px 0 !important;
+    transition: all 0.2s ease-in-out;
+}
+
+[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Hide the default radio input circle */
+[data-testid="stSidebar"] div[data-testid="stRadio"] input[type="radio"] {
+    display: none !important;
+}
+
+/* Ensure navigation text is crisp white */
+[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label p {
+    color: #FFFFFF !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
 }
 
 /* Fix Streamlit Expander background to match dark sidebar */
